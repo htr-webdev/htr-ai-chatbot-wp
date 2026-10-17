@@ -81,4 +81,4 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 **Habib Mirzaei**
 
 - GitHub: https://github.com/htr-webdev
-- LinkedIn: https://www.linkedin.com/in/habib-mirzaei-dev/
+- LinkedIn: https://www.linkedin.com/in/habib-mirzaei1995/

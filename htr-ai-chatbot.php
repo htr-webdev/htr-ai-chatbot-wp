@@ -7,7 +7,7 @@
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Habib Mirzaei
- * Author URI:        https://www.linkedin.com/in/habib-mirzaei-dev/
+ * Author URI:        https://www.linkedin.com/in/habib-mirzaei1995/
  * License:           MIT
  * License URI:       https://opensource.org/licenses/MIT
  * Text Domain:       htr-ai-chatbot
