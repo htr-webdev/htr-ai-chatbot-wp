@@ -2,9 +2,6 @@
 /**
  * Admin settings page for the plugin.
  *
- * This class registers the plugin settings, handles the API key
- * storage, and provides the admin interface for configuration.
- *
  * @package HTR_AI_Chatbot
  */
 
@@ -26,6 +23,11 @@ class HTR_AI_Chatbot_Settings {
             'admin_menu',
             array( $this, 'register_menu' )
         );
+
+        add_action(
+            'admin_enqueue_scripts',
+            array( $this, 'enqueue_admin_assets' )
+        );
     }
 
     /**
@@ -45,6 +47,27 @@ class HTR_AI_Chatbot_Settings {
     }
 
     /**
+     * Load admin assets only on the plugin settings page.
+     *
+     * @param string $hook Current admin page hook.
+     * @return void
+     */
+    public function enqueue_admin_assets( $hook ) {
+        if ( 'toplevel_page_htr-ai-chatbot' !== $hook ) {
+            return;
+        }
+
+        $plugin_file = dirname( __DIR__ ) . '/htr-ai-chatbot.php';
+
+        wp_enqueue_style(
+            'htr-ai-chatbot-settings',
+            plugin_dir_url( $plugin_file ) . 'assets/css/settings.css',
+            array(),
+            '0.1.0'
+        );
+    }
+
+    /**
      * Display the admin settings page.
      *
      * @return void
@@ -54,9 +77,22 @@ class HTR_AI_Chatbot_Settings {
             return;
         }
 
-        echo '<div class="wrap">';
-        echo '<h1>' . esc_html( 'Chatbot Settings' ) . '</h1>';
-        echo '<p>' . esc_html( 'The plugin settings page has been created successfully.' ) . '</p>';
+        $components_path = dirname( __DIR__ ) . '/components/';
+
+        echo '<div class="wrap htr-settings-page">';
+
+        require $components_path . 'settings-header.php';
+
+        require $components_path . 'api-settings.php';
+
+        require $components_path . 'chatbot-settings.php';
+
+        require $components_path . 'appearance-settings.php';
+
+        require $components_path . 'behavior-settings.php';
+
+        require $components_path . 'settings-actions.php';
+
         echo '</div>';
     }
 }
