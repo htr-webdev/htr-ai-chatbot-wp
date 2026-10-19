@@ -33,7 +33,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             type="color"
             id="htr-primary-color"
             name="htr_primary_color"
-            value="#2563EB"
+            value="<?php echo esc_attr( $settings['primary_color'] ); ?>"
         >
 
         <p class="description">
@@ -54,11 +54,17 @@ if ( ! defined( 'ABSPATH' ) ) {
             id="htr-chatbot-position"
             name="htr_chatbot_position"
         >
-            <option value="bottom-right">
+            <option
+                value="bottom-right"
+                <?php selected( $settings['chatbot_position'], 'bottom-right' ); ?>
+            >
                 <?php echo esc_html( 'Bottom Right' ); ?>
             </option>
 
-            <option value="bottom-left">
+            <option
+                value="bottom-left"
+                <?php selected( $settings['chatbot_position'], 'bottom-left' ); ?>
+            >
                 <?php echo esc_html( 'Bottom Left' ); ?>
             </option>
         </select>
@@ -81,7 +87,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             type="number"
             id="htr-chatbot-width"
             name="htr_chatbot_width"
-            value="380"
+            value="<?php echo esc_attr( $settings['chatbot_width'] ); ?>"
             min="280"
             max="600"
         >
@@ -104,7 +110,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             type="number"
             id="htr-chatbot-height"
             name="htr_chatbot_height"
-            value="550"
+            value="<?php echo esc_attr( $settings['chatbot_height'] ); ?>"
             min="350"
             max="800"
         >
@@ -127,11 +133,17 @@ if ( ! defined( 'ABSPATH' ) ) {
             id="htr-header-style"
             name="htr_header_style"
         >
-            <option value="solid">
+            <option
+                value="solid"
+                <?php selected( $settings['header_style'], 'solid' ); ?>
+            >
                 <?php echo esc_html( 'Solid Color' ); ?>
             </option>
 
-            <option value="gradient">
+            <option
+                value="gradient"
+                <?php selected( $settings['header_style'], 'gradient' ); ?>
+            >
                 <?php echo esc_html( 'Gradient' ); ?>
             </option>
         </select>

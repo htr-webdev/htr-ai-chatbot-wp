@@ -29,12 +29,13 @@ if ( ! defined( 'ABSPATH' ) ) {
             <?php echo esc_html( 'Assistant Name' ); ?>
         </label>
 
-        <input
-            type="text"
-            id="htr-chatbot-name"
-            name="htr_chatbot_name"
-            placeholder="<?php echo esc_attr( 'AI Assistant' ); ?>"
-        >
+    <input
+        type="text"
+        id="htr-chatbot-name"
+        name="htr_chatbot_name"
+        value="<?php echo esc_attr( $settings['chatbot_name'] ); ?>"
+        placeholder="<?php echo esc_attr( 'AI Assistant' ); ?>"
+    >
 
         <p class="description">
             <?php
@@ -53,9 +54,9 @@ if ( ! defined( 'ABSPATH' ) ) {
         <textarea
             id="htr-welcome-message"
             name="htr_welcome_message"
-            rows="3"
             placeholder="<?php echo esc_attr( 'Hello! How can I help you today?' ); ?>"
-        ></textarea>
+            ><?php echo esc_textarea( $settings['welcome_message'] ); ?>
+        </textarea>
 
         <p class="description">
             <?php
@@ -75,6 +76,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             type="text"
             id="htr-input-placeholder"
             name="htr_input_placeholder"
+            value="<?php echo esc_attr( $settings['input_placeholder'] ); ?>"
             placeholder="<?php echo esc_attr( 'Type your message...' ); ?>"
         >
 
@@ -91,13 +93,12 @@ if ( ! defined( 'ABSPATH' ) ) {
         <label for="htr-fallback-message">
             <?php echo esc_html( 'Fallback Message' ); ?>
         </label>
-
         <textarea
             id="htr-fallback-message"
             name="htr_fallback_message"
-            rows="3"
             placeholder="<?php echo esc_attr( 'Sorry, something went wrong. Please try again.' ); ?>"
-        ></textarea>
+            ><?php echo esc_textarea( $settings['fallback_message'] ); ?>
+        </textarea>
 
         <p class="description">
             <?php

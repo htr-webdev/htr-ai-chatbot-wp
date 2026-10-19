@@ -25,6 +25,31 @@ class HTR_AI_Chatbot_Settings_Page {
             return;
         }
 
+
+$settings = wp_parse_args(
+    get_option( 'htr_ai_chatbot_settings', array() ),
+    array(
+        'api_provider'       => 'openai',
+        'api_model'          => 'gpt-4o-mini',
+        'api_endpoint'       => '',
+        'chatbot_name'       => '',
+        'welcome_message'    => '',
+        'input_placeholder'  => '',
+        'fallback_message'   => '',
+        'primary_color'      => '#2563EB',
+        'chatbot_position'   => 'bottom-right',
+        'chatbot_width'      => 380,
+        'chatbot_height'     => 550,
+        'header_style'       => 'solid',
+        'chatbot_enabled'    => 1,
+        'auto_open'          => 0,
+        'auto_open_delay'    => 5,
+        'show_close_button'  => 1,
+        'message_limit'      => 2000,
+    )
+);
+
+        
         $components_path = dirname( __DIR__, 3 ) . '/components/';
 
         echo '<div class="wrap htr-settings-page">';

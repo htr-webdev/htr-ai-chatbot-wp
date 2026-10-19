@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <p>
             <?php
             echo esc_html(
-                'Control how the chatbot opens and behaves on your website.'
+                'Control when the chatbot is enabled and how it behaves.'
             );
             ?>
         </p>
@@ -33,11 +33,17 @@ if ( ! defined( 'ABSPATH' ) ) {
             id="htr-chatbot-enabled"
             name="htr_chatbot_enabled"
         >
-            <option value="1">
+            <option
+                value="1"
+                <?php selected( (string) $settings['chatbot_enabled'], '1' ); ?>
+            >
                 <?php echo esc_html( 'Enabled' ); ?>
             </option>
 
-            <option value="0">
+            <option
+                value="0"
+                <?php selected( (string) $settings['chatbot_enabled'], '0' ); ?>
+            >
                 <?php echo esc_html( 'Disabled' ); ?>
             </option>
         </select>
@@ -45,7 +51,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <p class="description">
             <?php
             echo esc_html(
-                'Enable or disable the chatbot on the website.'
+                'Enable or disable the chatbot.'
             );
             ?>
         </p>
@@ -53,18 +59,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 
     <div class="htr-settings-field">
         <label for="htr-auto-open">
-            <?php echo esc_html( 'Auto Open Chat' ); ?>
+            <?php echo esc_html( 'Automatically Open Chatbot' ); ?>
         </label>
 
         <select
             id="htr-auto-open"
             name="htr_auto_open"
         >
-            <option value="0">
+            <option
+                value="0"
+                <?php selected( (string) $settings['auto_open'], '0' ); ?>
+            >
                 <?php echo esc_html( 'Disabled' ); ?>
             </option>
 
-            <option value="1">
+            <option
+                value="1"
+                <?php selected( (string) $settings['auto_open'], '1' ); ?>
+            >
                 <?php echo esc_html( 'Enabled' ); ?>
             </option>
         </select>
@@ -72,7 +84,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <p class="description">
             <?php
             echo esc_html(
-                'Automatically open the chat window when a visitor loads the page.'
+                'Automatically open the chat window after the visitor loads the page.'
             );
             ?>
         </p>
@@ -80,22 +92,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 
     <div class="htr-settings-field">
         <label for="htr-auto-open-delay">
-            <?php echo esc_html( 'Auto Open Delay' ); ?>
+            <?php echo esc_html( 'Auto-Open Delay' ); ?>
         </label>
 
         <input
             type="number"
             id="htr-auto-open-delay"
             name="htr_auto_open_delay"
-            value="5"
-            min="0"
+            value="<?php echo esc_attr( $settings['auto_open_delay'] ); ?>"
+            min="1"
             max="60"
         >
 
         <p class="description">
             <?php
             echo esc_html(
-                'Set the delay before the chat window opens automatically, in seconds.'
+                'Set the delay before the chatbot opens automatically, in seconds.'
             );
             ?>
         </p>
@@ -110,19 +122,25 @@ if ( ! defined( 'ABSPATH' ) ) {
             id="htr-show-close-button"
             name="htr_show_close_button"
         >
-            <option value="1">
-                <?php echo esc_html( 'Yes' ); ?>
+            <option
+                value="1"
+                <?php selected( (string) $settings['show_close_button'], '1' ); ?>
+            >
+                <?php echo esc_html( 'Enabled' ); ?>
             </option>
 
-            <option value="0">
-                <?php echo esc_html( 'No' ); ?>
+            <option
+                value="0"
+                <?php selected( (string) $settings['show_close_button'], '0' ); ?>
+            >
+                <?php echo esc_html( 'Disabled' ); ?>
             </option>
         </select>
 
         <p class="description">
             <?php
             echo esc_html(
-                'Choose whether visitors can close the chat window.'
+                'Choose whether visitors can close the chatbot window using its close button.'
             );
             ?>
         </p>
@@ -137,7 +155,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             type="number"
             id="htr-message-limit"
             name="htr_message_limit"
-            value="2000"
+            value="<?php echo esc_attr( $settings['message_limit'] ); ?>"
             min="100"
             max="10000"
         >
@@ -145,7 +163,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <p class="description">
             <?php
             echo esc_html(
-                'Set the maximum number of characters allowed in a visitor message.'
+                'Set the maximum number of characters allowed in a message.'
             );
             ?>
         </p>

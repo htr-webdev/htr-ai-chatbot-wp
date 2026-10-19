@@ -29,6 +29,13 @@ if ( ! defined( 'ABSPATH' ) ) {
         </label>
 
         <select id="htr-api-provider" name="htr_api_provider">
+            <option
+                value="openai"
+                <?php selected( $settings['api_provider'], 'openai' ); ?>
+            >
+                <?php echo esc_html( 'OpenAI' ); ?>
+            </option>
+        </select>
             <option value="openai">
                 <?php echo esc_html( 'OpenAI' ); ?>
             </option>
@@ -71,7 +78,10 @@ if ( ! defined( 'ABSPATH' ) ) {
         </label>
 
         <select id="htr-api-model" name="htr_api_model">
-            <option value="gpt-4o-mini">
+            <option
+                value="gpt-4o-mini"
+                <?php selected( $settings['api_model'], 'gpt-4o-mini' ); ?>
+            >
                 <?php echo esc_html( 'GPT-4o mini' ); ?>
             </option>
         </select>
@@ -94,6 +104,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             type="url"
             id="htr-api-endpoint"
             name="htr_api_endpoint"
+            value="<?php echo esc_attr( $settings['api_endpoint'] ); ?>"
             placeholder="<?php echo esc_attr( 'https://api.example.com/v1' ); ?>"
         >
 
