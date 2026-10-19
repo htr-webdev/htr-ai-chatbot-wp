@@ -1,3 +1,4 @@
+
 <?php
 /**
  * API settings component.
@@ -14,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 <div class="htr-settings-card">
     <div class="htr-settings-card__header">
         <h2><?php echo esc_html( 'API Configuration' ); ?></h2>
+
         <p>
             <?php
             echo esc_html(
@@ -33,10 +35,6 @@ if ( ! defined( 'ABSPATH' ) ) {
                 value="openai"
                 <?php selected( $settings['api_provider'], 'openai' ); ?>
             >
-                <?php echo esc_html( 'OpenAI' ); ?>
-            </option>
-        </select>
-            <option value="openai">
                 <?php echo esc_html( 'OpenAI' ); ?>
             </option>
         </select>
@@ -66,7 +64,7 @@ if ( ! defined( 'ABSPATH' ) ) {
         <p class="description">
             <?php
             echo esc_html(
-                'Enter the API key provided by your AI service provider.'
+                'Leave blank to keep the previously saved API key.'
             );
             ?>
         </p>
