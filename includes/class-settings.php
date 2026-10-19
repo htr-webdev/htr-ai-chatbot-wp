@@ -1,4 +1,3 @@
-
 <?php
 /**
  * Admin settings page for the plugin.

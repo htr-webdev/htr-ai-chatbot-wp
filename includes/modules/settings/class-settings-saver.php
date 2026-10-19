@@ -34,39 +34,73 @@ class HTR_AI_Chatbot_Settings_Saver {
 
         $input = wp_unslash( $_POST );
 
-        $settings = get_option(
+        $stored_settings = get_option(
             'htr_ai_chatbot_settings',
             array()
         );
 
-        if ( ! is_array( $settings ) ) {
-            $settings = array();
+        if ( ! is_array( $stored_settings ) ) {
+            $stored_settings = array();
         }
 
+        $defaults = array(
+            'api_provider'      => 'openai',
+            'api_model'          => 'gpt-4o-mini',
+            'api_endpoint'      => '',
+            'api_key'            => '',
+            'chatbot_name'       => '',
+            'welcome_message'    => '',
+            'input_placeholder'  => '',
+            'fallback_message'   => '',
+            'primary_color'      => '#2563EB',
+            'chatbot_position'   => 'bottom-right',
+            'chatbot_width'      => 380,
+            'chatbot_height'     => 550,
+            'header_style'       => 'solid',
+            'chatbot_enabled'    => 1,
+            'auto_open'          => 0,
+            'auto_open_delay'    => 5,
+            'show_close_button'  => 1,
+            'message_limit'      => 2000,
+        );
+
+        $settings = wp_parse_args( $stored_settings, $defaults );
+
         // API settings.
-        $provider = isset( $input['htr_api_provider'] )
-            ? sanitize_text_field( $input['htr_api_provider'] )
-            : 'openai';
+        if (
+            isset( $input['htr_api_provider'] ) &&
+            is_string( $input['htr_api_provider'] )
+        ) {
+            $provider = sanitize_text_field(
+                $input['htr_api_provider']
+            );
 
-        $settings['api_provider'] = in_array(
-            $provider,
-            array( 'openai' ),
-            true
-        ) ? $provider : 'openai';
+            if ( in_array( $provider, array( 'openai' ), true ) ) {
+                $settings['api_provider'] = $provider;
+            }
+        }
 
-        $model = isset( $input['htr_api_model'] )
-            ? sanitize_text_field( $input['htr_api_model'] )
-            : 'gpt-4o-mini';
+        if (
+            isset( $input['htr_api_model'] ) &&
+            is_string( $input['htr_api_model'] )
+        ) {
+            $model = sanitize_text_field(
+                $input['htr_api_model']
+            );
 
-        $settings['api_model'] = in_array(
-            $model,
-            array( 'gpt-4o-mini' ),
-            true
-        ) ? $model : 'gpt-4o-mini';
+            if ( in_array( $model, array( 'gpt-4o-mini' ), true ) ) {
+                $settings['api_model'] = $model;
+            }
+        }
 
-        $settings['api_endpoint'] = isset( $input['htr_api_endpoint'] )
-            ? esc_url_raw( $input['htr_api_endpoint'] )
-            : '';
+        if (
+            isset( $input['htr_api_endpoint'] ) &&
+            is_string( $input['htr_api_endpoint'] )
+        ) {
+            $settings['api_endpoint'] = esc_url_raw(
+                $input['htr_api_endpoint']
+            );
+        }
 
         if (
             isset( $input['htr_api_key'] ) &&
@@ -79,76 +113,137 @@ class HTR_AI_Chatbot_Settings_Saver {
         }
 
         // Chatbot settings.
-        $settings['chatbot_name'] = isset( $input['htr_chatbot_name'] )
-            ? sanitize_text_field( $input['htr_chatbot_name'] )
-            : '';
+        $text_fields = array(
+            'htr_chatbot_name'      => 'chatbot_name',
+            'htr_input_placeholder' => 'input_placeholder',
+        );
 
-        $settings['welcome_message'] = isset( $input['htr_welcome_message'] )
-            ? sanitize_textarea_field( $input['htr_welcome_message'] )
-            : '';
+        foreach ( $text_fields as $input_key => $setting_key ) {
+            if (
+                isset( $input[ $input_key ] ) &&
+                is_string( $input[ $input_key ] )
+            ) {
+                $settings[ $setting_key ] = sanitize_text_field(
+                    $input[ $input_key ]
+                );
+            }
+        }
 
-        $settings['input_placeholder'] = isset( $input['htr_input_placeholder'] )
-            ? sanitize_text_field( $input['htr_input_placeholder'] )
-            : '';
+        $textarea_fields = array(
+            'htr_welcome_message' => 'welcome_message',
+            'htr_fallback_message' => 'fallback_message',
+        );
 
-        $settings['fallback_message'] = isset( $input['htr_fallback_message'] )
-            ? sanitize_textarea_field( $input['htr_fallback_message'] )
-            : '';
+        foreach ( $textarea_fields as $input_key => $setting_key ) {
+            if (
+                isset( $input[ $input_key ] ) &&
+                is_string( $input[ $input_key ] )
+            ) {
+                $settings[ $setting_key ] = sanitize_textarea_field(
+                    $input[ $input_key ]
+                );
+            }
+        }
 
         // Appearance settings.
-        $color = isset( $input['htr_primary_color'] )
-            ? sanitize_hex_color( $input['htr_primary_color'] )
-            : false;
+        if (
+            isset( $input['htr_primary_color'] ) &&
+            is_string( $input['htr_primary_color'] )
+        ) {
+            $color = sanitize_hex_color(
+                $input['htr_primary_color']
+            );
 
-        $settings['primary_color'] = $color
-            ? $color
-            : ( $settings['primary_color'] ?? '#2563EB' );
+            if ( $color ) {
+                $settings['primary_color'] = $color;
+            }
+        }
 
-        $position = isset( $input['htr_chatbot_position'] )
-            ? sanitize_text_field( $input['htr_chatbot_position'] )
-            : 'bottom-right';
+        if (
+            isset( $input['htr_chatbot_position'] ) &&
+            is_string( $input['htr_chatbot_position'] )
+        ) {
+            $position = sanitize_text_field(
+                $input['htr_chatbot_position']
+            );
 
-        $settings['chatbot_position'] = in_array(
-            $position,
-            array( 'bottom-right', 'bottom-left' ),
-            true
-        ) ? $position : 'bottom-right';
+            if (
+                in_array(
+                    $position,
+                    array( 'bottom-right', 'bottom-left' ),
+                    true
+                )
+            ) {
+                $settings['chatbot_position'] = $position;
+            }
+        }
 
-        $settings['chatbot_width'] = isset( $input['htr_chatbot_width'] )
-            ? min( 600, max( 280, absint( $input['htr_chatbot_width'] ) ) )
-            : 380;
+        if ( isset( $input['htr_chatbot_width'] ) && is_scalar( $input['htr_chatbot_width'] ) ) {
+            $settings['chatbot_width'] = min(
+                600,
+                max( 280, absint( $input['htr_chatbot_width'] ) )
+            );
+        }
 
-        $settings['chatbot_height'] = isset( $input['htr_chatbot_height'] )
-            ? min( 800, max( 350, absint( $input['htr_chatbot_height'] ) ) )
-            : 550;
+        if ( isset( $input['htr_chatbot_height'] ) && is_scalar( $input['htr_chatbot_height'] ) ) {
+            $settings['chatbot_height'] = min(
+                800,
+                max( 350, absint( $input['htr_chatbot_height'] ) )
+            );
+        }
 
-        $header_style = isset( $input['htr_header_style'] )
-            ? sanitize_text_field( $input['htr_header_style'] )
-            : 'solid';
+        if (
+            isset( $input['htr_header_style'] ) &&
+            is_string( $input['htr_header_style'] )
+        ) {
+            $header_style = sanitize_text_field(
+                $input['htr_header_style']
+            );
 
-        $settings['header_style'] = in_array(
-            $header_style,
-            array( 'solid', 'gradient' ),
-            true
-        ) ? $header_style : 'solid';
+            if (
+                in_array(
+                    $header_style,
+                    array( 'solid', 'gradient' ),
+                    true
+                )
+            ) {
+                $settings['header_style'] = $header_style;
+            }
+        }
 
         // Behavior settings.
-        $settings['chatbot_enabled'] = isset( $input['htr_chatbot_enabled'] )
-            && '1' === $input['htr_chatbot_enabled'] ? 1 : 0;
+        $boolean_fields = array(
+            'htr_chatbot_enabled'   => 'chatbot_enabled',
+            'htr_auto_open'         => 'auto_open',
+            'htr_show_close_button' => 'show_close_button',
+        );
 
-        $settings['auto_open'] = isset( $input['htr_auto_open'] )
-            && '1' === $input['htr_auto_open'] ? 1 : 0;
+        foreach ( $boolean_fields as $input_key => $setting_key ) {
+            if (
+                isset( $input[ $input_key ] ) &&
+                is_string( $input[ $input_key ] )
+            ) {
+                if ( '1' === $input[ $input_key ] ) {
+                    $settings[ $setting_key ] = 1;
+                } elseif ( '0' === $input[ $input_key ] ) {
+                    $settings[ $setting_key ] = 0;
+                }
+            }
+        }
 
-        $settings['auto_open_delay'] = isset( $input['htr_auto_open_delay'] )
-            ? min( 60, absint( $input['htr_auto_open_delay'] ) )
-            : 5;
+        if ( isset( $input['htr_auto_open_delay'] ) && is_scalar( $input['htr_auto_open_delay'] ) ) {
+            $settings['auto_open_delay'] = min(
+                60,
+                max( 1, absint( $input['htr_auto_open_delay'] ) )
+            );
+        }
 
-        $settings['show_close_button'] = isset( $input['htr_show_close_button'] )
-            && '1' === $input['htr_show_close_button'] ? 1 : 0;
-
-        $settings['message_limit'] = isset( $input['htr_message_limit'] )
-            ? min( 10000, max( 100, absint( $input['htr_message_limit'] ) ) )
-            : 2000;
+        if ( isset( $input['htr_message_limit'] ) && is_scalar( $input['htr_message_limit'] ) ) {
+            $settings['message_limit'] = min(
+                10000,
+                max( 100, absint( $input['htr_message_limit'] ) )
+            );
+        }
 
         update_option( 'htr_ai_chatbot_settings', $settings );
 
