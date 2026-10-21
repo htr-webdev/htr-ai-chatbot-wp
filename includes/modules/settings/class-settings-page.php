@@ -54,6 +54,17 @@ $settings = wp_parse_args(
 
         echo '<div class="wrap htr-settings-page">';
 
+                if (
+            isset( $_GET['htr_reset'] ) &&
+            'success' === sanitize_text_field(
+                wp_unslash( $_GET['htr_reset'] )
+            )
+        ) {
+            echo '<div class="notice notice-success is-dismissible"><p>';
+            echo esc_html( 'Settings have been reset successfully.' );
+            echo '</p></div>';
+        }
+
         require $components_path . 'settings-header.php';
 
         echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" id="htr-settings-form">';
@@ -61,6 +72,7 @@ $settings = wp_parse_args(
         echo '<input type="hidden" name="action" value="htr_save_settings">';
 
         wp_nonce_field( 'htr_save_settings', 'htr_settings_nonce' );
+        wp_nonce_field( 'htr_reset_settings', 'htr_reset_settings_nonce' );
 
         require $components_path . 'settings-tabs.php';
 

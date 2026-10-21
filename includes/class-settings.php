@@ -34,5 +34,12 @@ class HTR_AI_Chatbot_Settings {
             'admin_post_htr_save_settings',
             array( $settings_saver, 'save' )
         );
+
+        $settings_reset = new HTR_AI_Chatbot_Settings_Reset();
+
+        add_action(
+            'admin_post_htr_reset_settings',
+            array( $settings_reset, 'reset' )
+        );
     }
 }
