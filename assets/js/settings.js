@@ -2,10 +2,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const tabs = document.querySelectorAll(".htr-settings-tab");
   const panels = document.querySelectorAll(".htr-settings-panel");
 
-  if (!tabs.length || !panels.length) {
-    return;
-  }
-
   function activateTab(tab) {
     const target = tab.dataset.tab;
 
@@ -25,29 +21,76 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  tabs.forEach(function (tab, index) {
-    tab.addEventListener("click", function () {
-      activateTab(tab);
+  if (tabs.length && panels.length) {
+    tabs.forEach(function (tab, index) {
+      tab.addEventListener("click", function () {
+        activateTab(tab);
+      });
+
+      tab.addEventListener("keydown", function (event) {
+        let nextIndex = index;
+
+        if (event.key === "ArrowRight") {
+          nextIndex = (index + 1) % tabs.length;
+        } else if (event.key === "ArrowLeft") {
+          nextIndex = (index - 1 + tabs.length) % tabs.length;
+        } else if (event.key === "Home") {
+          nextIndex = 0;
+        } else if (event.key === "End") {
+          nextIndex = tabs.length - 1;
+        } else {
+          return;
+        }
+
+        event.preventDefault();
+        tabs[nextIndex].focus();
+        activateTab(tabs[nextIndex]);
+      });
     });
+  }
 
-    tab.addEventListener("keydown", function (event) {
-      let nextIndex = index;
+  const resetButton = document.getElementById("htr-reset-settings");
+  const settingsForm = document.getElementById("htr-settings-form");
 
-      if (event.key === "ArrowRight") {
-        nextIndex = (index + 1) % tabs.length;
-      } else if (event.key === "ArrowLeft") {
-        nextIndex = (index - 1 + tabs.length) % tabs.length;
-      } else if (event.key === "Home") {
-        nextIndex = 0;
-      } else if (event.key === "End") {
-        nextIndex = tabs.length - 1;
-      } else {
+  if (resetButton && settingsForm) {
+    resetButton.addEventListener("click", function () {
+      const confirmed = window.confirm(
+        "Are you sure you want to reset all chatbot settings? This will also clear the saved API key.",
+      );
+
+      if (!confirmed) {
         return;
       }
 
-      event.preventDefault();
-      tabs[nextIndex].focus();
-      activateTab(tabs[nextIndex]);
+      const nonce = settingsForm.querySelector(
+        'input[name="htr_reset_settings_nonce"]',
+      );
+
+      if (!nonce) {
+        window.alert(
+          "Unable to reset settings. Please reload the page and try again.",
+        );
+        return;
+      }
+
+      const resetForm = document.createElement("form");
+      resetForm.method = "POST";
+      resetForm.action = settingsForm.action;
+
+      const actionInput = document.createElement("input");
+      actionInput.type = "hidden";
+      actionInput.name = "action";
+      actionInput.value = "htr_reset_settings";
+
+      const nonceInput = document.createElement("input");
+      nonceInput.type = "hidden";
+      nonceInput.name = "htr_reset_settings_nonce";
+      nonceInput.value = nonce.value;
+
+      resetForm.appendChild(actionInput);
+      resetForm.appendChild(nonceInput);
+      document.body.appendChild(resetForm);
+      resetForm.submit();
     });
-  });
+  }
 });

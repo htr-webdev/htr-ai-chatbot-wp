@@ -34,6 +34,7 @@ require_once HTR_AI_CHATBOT_PATH . 'includes/modules/settings/class-settings-ass
 require_once HTR_AI_CHATBOT_PATH . 'includes/modules/settings/class-settings-page.php';
 require_once HTR_AI_CHATBOT_PATH . 'includes/modules/settings/class-settings-menu.php';
 require_once HTR_AI_CHATBOT_PATH . 'includes/modules/settings/class-settings-saver.php';
+require_once HTR_AI_CHATBOT_PATH . 'includes/modules/settings/class-settings-reset.php';
 require_once HTR_AI_CHATBOT_PATH . 'includes/class-settings.php';
 
 // Initialize the plugin.
