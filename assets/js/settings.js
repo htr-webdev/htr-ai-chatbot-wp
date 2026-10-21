@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const resetForm = document.createElement("form");
       resetForm.method = "POST";
-      resetForm.action = settingsForm.action;
+      resetForm.action = settingsForm.getAttribute("action");
 
       const actionInput = document.createElement("input");
       actionInput.type = "hidden";
