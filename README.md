@@ -1,22 +1,22 @@
 # HTR AI Chatbot for WordPress
 
-An AI-powered chatbot plugin for WordPress designed to help small businesses automate customer support, answer frequently asked questions, and improve the website experience.
+An AI-powered chatbot plugin for WordPress designed to help small businesses automate customer support and improve website communication.
 
 ![Version](https://img.shields.io/badge/version-0.1.0-green)
 ![Status](https://img.shields.io/badge/status-in%20development-yellow)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue)
-![PHP](https://img.shields.io/badge/PHP-WordPress%20compatible-777BB4)
+![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4)
 
 ## Overview
 
-HTR AI Chatbot is a WordPress plugin project focused on bringing AI-powered customer support to WordPress websites.
+HTR AI Chatbot is an independent WordPress plugin project that aims to bring configurable, AI-powered customer support to WordPress websites.
 
-The planned chatbot will allow website visitors to ask questions through a floating chat widget and receive AI-generated responses. Website administrators will be able to configure API settings, customize chatbot messages, and adjust the widget's appearance and behavior through a modular administration interface.
+The planned chatbot experience includes a floating chat widget, customizable messages, configurable appearance and behavior, and integration with an AI provider through server-side API requests.
 
-The project is being developed incrementally, with an emphasis on modular architecture, maintainability, security, and extensibility.
+The plugin is being developed incrementally, with an emphasis on modular architecture, maintainability, security, and extensibility.
 
-**Current development stage:** The plugin includes its core structure, a modular administration settings interface, settings persistence, input sanitization, and basic administrative security checks. AI provider integration and the complete frontend chatbot experience are still under development.
+**Current development stage:** The plugin includes a modular administration settings interface, settings persistence, input sanitization and validation, administrative security checks, and working settings reset functionality. AI provider integration and the complete frontend chatbot experience are not yet implemented.
 
 ## Target Users
 
@@ -27,9 +27,15 @@ The project is being developed incrementally, with an emphasis on modular archit
 
 ## Features and Development Roadmap
 
-### Admin Settings Interface
+### Plugin Foundation
 
 - [x] Initial plugin structure.
+- [x] WordPress plugin initialization.
+- [x] Modular code organization.
+- [x] Basic plugin administration integration.
+
+### Admin Settings Interface
+
 - [x] Admin settings page registration.
 - [x] Modular settings architecture.
 - [x] API configuration interface.
@@ -37,23 +43,25 @@ The project is being developed incrementally, with an emphasis on modular archit
 - [x] Appearance settings interface.
 - [x] Behavior settings interface.
 - [x] Tabbed settings navigation.
-- [x] Admin settings styles.
+- [x] Administration interface styling.
 - [x] Persistent settings storage.
 - [x] Settings sanitization and validation.
 - [x] Capability checks and nonce verification for settings submissions.
 - [x] Display saved settings in the administration interface.
 - [x] Preserve the previously saved API key when the API key field is left blank.
-- [ ] Settings reset functionality.
+- [x] Reset settings to their default values.
+- [x] Verify settings reset functionality in the development environment.
+
+### API Key Management and AI Integration
+
 - [ ] Complete API key lifecycle and security handling.
-
-### AI Integration
-
 - [ ] AI provider integration.
 - [ ] Expandable AI model selection.
 - [ ] Functional custom API endpoint support.
 - [ ] Server-side API request handling.
 - [ ] API error handling and response validation.
 - [ ] Secure communication with AI providers.
+- [ ] API connectivity testing from the administration interface.
 
 ### Frontend Chat Widget
 
@@ -63,6 +71,8 @@ The project is being developed incrementally, with an emphasis on modular archit
 - [ ] Apply configured appearance and position settings.
 - [ ] Automatic opening and behavior controls.
 - [ ] Frontend-to-backend communication.
+- [ ] Message submission and response rendering.
+- [ ] Loading, error, and empty states.
 - [ ] End-to-end chatbot functionality.
 
 ### Knowledge and Conversations
@@ -73,19 +83,20 @@ The project is being developed incrementally, with an emphasis on modular archit
 - [ ] Conversation management and retention controls.
 - [ ] Multi-language support.
 
-> Features marked as planned or in development are not yet available as complete, working functionality.
+> Checklist items describe the current implementation status. Planned features are not available until their implementation and testing are complete.
 
 ## Technology Stack
 
-| Technology | Purpose |
-| --- | --- |
-| PHP | Core plugin logic and WordPress integration |
-| JavaScript | Admin interactions and planned frontend chat behavior |
-| CSS | Administration interface and planned chat widget styling |
-| WordPress Hooks API | Plugin initialization and administration integration |
-| WordPress Options API | Persistent storage of plugin settings |
-| WordPress REST API | Potential communication between the frontend and backend |
-| AI APIs | Planned AI-powered response generation |
+| Technology            | Purpose                                                   |
+| --------------------- | --------------------------------------------------------- |
+| PHP                   | Core plugin logic and WordPress integration               |
+| JavaScript            | Administration interactions and planned frontend behavior |
+| CSS                   | Administration interface and planned chat widget styling  |
+| WordPress Hooks API   | Plugin initialization and administration integration      |
+| WordPress Options API | Persistent storage of plugin settings                     |
+| WordPress HTTP API    | Planned server-side communication with AI providers       |
+| WordPress REST API    | Potential frontend-to-backend communication               |
+| AI APIs               | Planned AI-powered response generation                    |
 
 ## Project Structure
 
@@ -112,7 +123,8 @@ htr-ai-chatbot-wp/
 │   │       ├── class-settings-assets.php
 │   │       ├── class-settings-menu.php
 │   │       ├── class-settings-page.php
-│   │       └── class-settings-saver.php
+│   │       ├── class-settings-saver.php
+│   │       └── class-settings-reset.php
 │   ├── class-api-handler.php
 │   ├── class-chat-widget.php
 │   └── class-settings.php
@@ -126,36 +138,45 @@ htr-ai-chatbot-wp/
 
 ## Architecture
 
-The plugin uses a modular structure to separate administration logic, settings persistence, asset loading, and presentation.
+The plugin separates administration settings, presentation, asset loading, and request handling into dedicated classes and components.
 
-- **`htr-ai-chatbot.php`** — Main plugin entry point.
+### Core Files
+
+- **`htr-ai-chatbot.php`** — Defines plugin constants, loads the plugin classes, and initializes the plugin.
 - **`includes/class-settings.php`** — Coordinates the administration settings modules.
-- **`includes/modules/settings/class-settings-menu.php`** — Registers the plugin's administration menu.
+- **`includes/class-api-handler.php`** — Intended to handle communication with AI APIs.
+- **`includes/class-chat-widget.php`** — Handles the frontend chatbot integration structure.
+
+### Settings Modules
+
+- **`includes/modules/settings/class-settings-menu.php`** — Registers the administration menu.
 - **`includes/modules/settings/class-settings-page.php`** — Renders the settings page and loads its view components.
 - **`includes/modules/settings/class-settings-assets.php`** — Handles administration assets.
-- **`includes/modules/settings/class-settings-saver.php`** — Processes settings submissions, validates and sanitizes input, and saves configuration.
+- **`includes/modules/settings/class-settings-saver.php`** — Processes settings submissions, sanitizes and validates input, and saves configuration.
+- **`includes/modules/settings/class-settings-reset.php`** — Handles resetting plugin settings to their default values.
+
+### Presentation and Assets
+
 - **`components/`** — Contains individual PHP view components for the settings interface.
 - **`assets/css/settings.css`** — Styles the administration settings interface.
 - **`assets/css/chat-style.css`** — Intended to style the frontend chat widget.
 - **`assets/js/settings.js`** — Handles settings tab navigation.
 - **`assets/js/chat-script.js`** — Intended to manage frontend chat interactions.
-- **`includes/class-api-handler.php`** — Intended to handle communication with AI APIs.
-- **`includes/class-chat-widget.php`** — Intended to manage frontend chatbot integration.
 - **`languages/`** — Contains translation template files.
 
-This architecture keeps the settings interface modular and makes individual sections easier to maintain and extend without placing all presentation markup and settings logic in a single PHP class.
+The architecture is designed to keep responsibilities separate and make future development easier without concentrating all functionality in a single class.
 
 ## Requirements
 
 - WordPress 5.8 or later.
-- A PHP version compatible with the installed WordPress release and the plugin implementation.
-- An AI API account and API key when AI provider integration becomes available.
+- PHP 7.4 or later.
+- An AI provider account and API key when AI integration becomes available.
 
-The minimum supported PHP version will be specified more precisely as compatibility testing progresses.
+Compatibility with specific WordPress and PHP versions should be verified through testing before production use.
 
 ## Installation
 
-The plugin is under active development and is not yet ready for production use.
+The plugin is currently under active development and is not yet ready for production use.
 
 For development and testing:
 
@@ -163,46 +184,74 @@ For development and testing:
 2. Place the plugin directory inside `wp-content/plugins/`.
 3. Activate **HTR AI Chatbot** from the WordPress administration dashboard.
 4. Open **AI Chatbot** in the administration menu.
-5. Review and save the available configuration settings.
+5. Configure the available settings and save your changes.
+6. Use the reset action to restore settings to their default values when needed.
 
-The administration interface currently supports saving and restoring configured settings. However, saving configuration does not mean that the AI chatbot itself is operational. AI requests, frontend conversations, and the complete chatbot workflow still require implementation.
+The administration interface currently supports saving, displaying, and resetting settings. These capabilities do not mean that AI responses or the complete frontend chatbot workflow are operational.
 
 **Do not use this development version to handle production customer conversations or sensitive information.**
 
+## Settings Behavior
+
+The plugin stores its configuration in the WordPress Options API under the `htr_ai_chatbot_settings` option.
+
+The settings interface currently supports:
+
+- API provider, model, endpoint, and API key fields.
+- Chatbot name and message configuration.
+- Appearance and positioning options.
+- Behavior-related options.
+- Saving configured values.
+- Preserving an existing API key when the API key field is submitted empty.
+- Resetting the configuration to predefined default values.
+
+Resetting settings clears the stored API key and restores the other supported settings to their configured defaults.
+
+The reset action requires administrative permission and nonce verification.
+
 ## Security Considerations
 
-Security is an important part of the development process.
+Security is an ongoing development priority.
 
-Current and planned security measures include:
+Current security measures include:
 
-- Capability checks for administrative access.
+- Capability checks for administrative settings actions.
+- Nonce verification for settings submissions and reset requests.
 - Input sanitization and validation.
-- Context-appropriate output escaping.
-- Nonce verification for settings submissions.
-- Server-side API requests to avoid exposing API credentials in browser code.
-- Appropriate handling of API errors and sensitive conversation data.
-- Access controls and retention policies for stored conversations.
+- Context-appropriate output escaping where implemented.
+- Server-side processing of administrative settings.
+- Protection against direct access to PHP module files.
 
-The API key field preserves the previously saved key when submitted empty. This behavior does not, by itself, constitute a complete API key security solution.
+Planned security work includes:
+
+- Completing API key storage, replacement, and deletion behavior.
+- Keeping API credentials out of browser-side code.
+- Secure server-side communication with AI providers.
+- API response validation and error handling.
+- Access controls and retention policies for conversation data.
+
+The API key field currently preserves the previously stored key when submitted empty. This behavior is a convenience feature and does not constitute a complete API key security solution.
 
 The presence of individual security measures should not be interpreted as a guarantee that the plugin has undergone a complete security audit.
 
 ## Development Status
 
-| Area | Status |
-| --- | --- |
-| Repository and plugin foundation | Implemented |
-| Modular administration architecture | Implemented |
-| Settings interface and tab navigation | Implemented |
-| Settings persistence | Implemented |
-| Settings input sanitization | Implemented |
-| Basic administrative security checks | Implemented |
-| AI API integration | Planned |
-| Functional frontend chatbot | In development |
-| Custom knowledge base | Planned |
-| Conversation history | Planned |
-| Multi-language support | Planned |
-| Production release | Planned |
+| Area                                  | Status                                |
+| ------------------------------------- | ------------------------------------- |
+| Plugin foundation                     | Implemented                           |
+| Modular administration architecture   | Implemented                           |
+| Settings interface and tab navigation | Implemented                           |
+| Settings persistence                  | Implemented                           |
+| Settings sanitization and validation  | Implemented                           |
+| Basic administrative security checks  | Implemented                           |
+| Settings reset                        | Implemented and tested in development |
+| Complete API key management           | In progress                           |
+| AI provider integration               | Planned                               |
+| Functional frontend chatbot           | Planned                               |
+| Custom knowledge base                 | Planned                               |
+| Conversation history                  | Planned                               |
+| Multi-language support                | Planned                               |
+| Production release                    | Planned                               |
 
 ## Contributing
 
@@ -218,7 +267,7 @@ Before submitting a contribution:
 4. Avoid introducing unnecessary dependencies.
 5. Include testing details where applicable.
 
-For substantial changes, consider opening an issue first to discuss the proposed approach.
+For substantial changes, consider opening an issue before implementation.
 
 ## License
 
@@ -230,7 +279,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 - GitHub: [htr-webdev](https://github.com/htr-webdev)
 - LinkedIn: [Habib Mirzaei](https://www.linkedin.com/in/habib-mirzaei1995/)
-
----
-
-*HTR AI Chatbot is an independent project and is not affiliated with or endorsed by OpenAI or WordPress.*
