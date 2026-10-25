@@ -36,7 +36,6 @@ class HTR_AI_Chatbot_Settings_Reset {
             'api_provider'       => 'openai',
             'api_model'          => 'gpt-4o-mini',
             'api_endpoint'       => '',
-            'api_key'            => '',
             'chatbot_name'       => '',
             'welcome_message'    => '',
             'input_placeholder'  => '',
@@ -54,6 +53,7 @@ class HTR_AI_Chatbot_Settings_Reset {
         );
 
         update_option( 'htr_ai_chatbot_settings', $defaults );
+        delete_option( 'htr_ai_chatbot_api_key' );
 
         wp_safe_redirect(
             add_query_arg(
