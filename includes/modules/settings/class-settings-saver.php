@@ -47,7 +47,6 @@ class HTR_AI_Chatbot_Settings_Saver {
             'api_provider'      => 'openai',
             'api_model'          => 'gpt-4o-mini',
             'api_endpoint'      => '',
-            'api_key'            => '',
             'chatbot_name'       => '',
             'welcome_message'    => '',
             'input_placeholder'  => '',
@@ -102,15 +101,51 @@ class HTR_AI_Chatbot_Settings_Saver {
             );
         }
 
+
+
+        // API key management.
+        $api_key = get_option( 'htr_ai_chatbot_api_key', '' );
+
+        // Migrate an existing API key from the legacy settings option.
         if (
-            isset( $input['htr_api_key'] ) &&
-            is_string( $input['htr_api_key'] ) &&
-            '' !== trim( $input['htr_api_key'] )
+            '' === $api_key &&
+            isset( $stored_settings['api_key'] ) &&
+            is_string( $stored_settings['api_key'] )
         ) {
-            $settings['api_key'] = sanitize_text_field(
-                $input['htr_api_key']
-            );
+            $api_key = $stored_settings['api_key'];
         }
+
+        $remove_api_key = (
+            isset( $input['htr_remove_api_key'] ) &&
+            '1' === $input['htr_remove_api_key']
+        );
+
+        if ( $remove_api_key ) {
+            delete_option( 'htr_ai_chatbot_api_key' );
+        } else {
+            if (
+                isset( $input['htr_api_key'] ) &&
+                is_string( $input['htr_api_key'] ) &&
+                '' !== trim( $input['htr_api_key'] )
+            ) {
+                $api_key = sanitize_text_field(
+                    $input['htr_api_key']
+                );
+            }
+
+            if ( '' !== $api_key ) {
+                update_option(
+                    'htr_ai_chatbot_api_key',
+                    $api_key,
+                    false
+                );
+            }
+        }
+
+        // Remove the API key from the general settings option.
+        unset( $settings['api_key'] );
+
+
 
         // Chatbot settings.
         $text_fields = array(

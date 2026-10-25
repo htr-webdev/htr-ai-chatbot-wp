@@ -61,6 +61,53 @@ if ( ! defined( 'ABSPATH' ) ) {
             autocomplete="off"
         >
 
+        <?php
+        $stored_api_key = get_option( 'htr_ai_chatbot_api_key', '' );
+
+        if ( '' === $stored_api_key ) {
+            $legacy_settings = get_option( 'htr_ai_chatbot_settings', array() );
+
+            if (
+                is_array( $legacy_settings ) &&
+                isset( $legacy_settings['api_key'] ) &&
+                is_string( $legacy_settings['api_key'] )
+            ) {
+                $stored_api_key = $legacy_settings['api_key'];
+            }
+        }
+        ?>
+
+
+        <?php if ( '' !== $stored_api_key ) : ?>
+            <p class="description">
+                <?php echo esc_html( 'API key is configured.' ); ?>
+            </p>
+        <?php else : ?>
+            <p class="description">
+                <?php echo esc_html( 'No API key is configured.' ); ?>
+            </p>
+        <?php endif; ?>
+
+        <div class="htr-settings-field">
+            <label for="htr-remove-api-key">
+                <input
+                    type="checkbox"
+                    id="htr-remove-api-key"
+                    name="htr_remove_api_key"
+                    value="1"
+                >
+                <?php echo esc_html( 'Remove the saved API key' ); ?>
+            </label>
+
+            <p class="description">
+                <?php
+                echo esc_html(
+                    'Select this option to permanently remove the saved API key when you save settings.'
+                );
+                ?>
+            </p>
+        </div>
+
         <p class="description">
             <?php
             echo esc_html(
@@ -68,6 +115,8 @@ if ( ! defined( 'ABSPATH' ) ) {
             );
             ?>
         </p>
+
+
     </div>
 
     <div class="htr-settings-field">
