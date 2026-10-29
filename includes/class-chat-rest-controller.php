@@ -50,14 +50,7 @@ class HTR_AI_Chatbot_Chat_REST_Controller {
     private $max_body_size = 16384;
 
     /**
-     * Maximum accepted message length in bytes.
-     *
-     * @var int
-     */
-    private $max_message_length = 10000;
-
-    /**
-     * Register the REST API hooks.
+     * Register REST API hooks.
      */
     public function __construct() {
         add_action(
@@ -115,7 +108,11 @@ class HTR_AI_Chatbot_Chat_REST_Controller {
 
         $params = $request->get_json_params();
 
-        if ( ! is_array( $params ) || ! isset( $params['message'] ) || ! is_string( $params['message'] ) ) {
+        if (
+            ! is_array( $params ) ||
+            ! isset( $params['message'] ) ||
+            ! is_string( $params['message'] )
+        ) {
             return new WP_Error(
                 'htr_chat_invalid_message',
                 __( 'Please provide a valid message.', 'htr-ai-chatbot' ),
@@ -133,10 +130,18 @@ class HTR_AI_Chatbot_Chat_REST_Controller {
             );
         }
 
-        if ( strlen( $message ) > $this->max_message_length ) {
+        $settings = get_option( 'htr_ai_chatbot_settings', array() );
+
+        $message_limit = is_array( $settings ) && isset( $settings['message_limit'] )
+            ? absint( $settings['message_limit'] )
+            : 100;
+
+        $message_limit = min( 10000, max( 100, $message_limit ) );
+
+        if ( strlen( $message ) > $message_limit ) {
             return new WP_Error(
                 'htr_chat_message_too_long',
-                __( 'Your message is too long. Please shorten it and try again.', 'htr-ai-chatbot' ),
+                __( 'Your message exceeds the configured length limit.', 'htr-ai-chatbot' ),
                 array( 'status' => 400 )
             );
         }
@@ -189,7 +194,10 @@ class HTR_AI_Chatbot_Chat_REST_Controller {
             ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
             : '';
 
-        if ( '' === $client_ip || ! filter_var( $client_ip, FILTER_VALIDATE_IP ) ) {
+        if (
+            '' === $client_ip ||
+            false === filter_var( $client_ip, FILTER_VALIDATE_IP )
+        ) {
             return false;
         }
 
