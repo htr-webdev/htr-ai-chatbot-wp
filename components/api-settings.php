@@ -152,14 +152,13 @@ if ( ! defined( 'ABSPATH' ) ) {
             id="htr-api-endpoint"
             name="htr_api_endpoint"
             value="<?php echo esc_attr( $settings['api_endpoint'] ); ?>"
-            placeholder="<?php echo esc_attr( 'https://api.example.com/v1' ); ?>"
+            placeholder="<?php echo esc_attr( 'https://api.example.com/v1/chat/completions' ); ?>"
         >
 
         <p class="description">
             <?php
             echo esc_html(
-                'Optional endpoint URL for a compatible API provider.'
-            );
+                'Enter the full HTTPS URL for an OpenAI-compatible Chat Completions endpoint.');
             ?>
         </p>
     </div>
