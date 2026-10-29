@@ -30,6 +30,7 @@ define( 'HTR_AI_CHATBOT_URL', plugin_dir_url( __FILE__ ) );
 // Load plugin classes.
 require_once HTR_AI_CHATBOT_PATH . 'includes/class-api-handler.php';
 require_once HTR_AI_CHATBOT_PATH . 'includes/class-chat-widget.php';
+require_once HTR_AI_CHATBOT_PATH . 'includes/class-chat-rest-controller.php';
 require_once HTR_AI_CHATBOT_PATH . 'includes/modules/settings/class-settings-assets.php';
 require_once HTR_AI_CHATBOT_PATH . 'includes/modules/settings/class-settings-page.php';
 require_once HTR_AI_CHATBOT_PATH . 'includes/modules/settings/class-settings-menu.php';
@@ -41,5 +42,6 @@ require_once HTR_AI_CHATBOT_PATH . 'includes/class-settings.php';
 function htr_ai_chatbot_init() {
     new HTR_AI_Chatbot_Settings();
     new HTR_AI_Chatbot_Chat_Widget();
+    new HTR_AI_Chatbot_Chat_REST_Controller();
 }
 add_action( 'plugins_loaded', 'htr_ai_chatbot_init' );
