@@ -12,9 +12,9 @@ An AI-powered WordPress plugin designed to help small businesses automate custom
 
 HTR AI Chatbot is an independent WordPress plugin project focused on configurable, AI-powered customer support.
 
-The project aims to provide a customizable chatbot with configurable appearance, behavior, and integration with AI providers. Its modular architecture is intended to keep the codebase maintainable as new features are introduced.
+The plugin is being developed with a modular architecture that separates administration settings, frontend presentation, REST API handling, and AI provider communication.
 
-**Current status:** The plugin includes a modular administration settings interface, persistent configuration, input validation, administrative security checks, settings reset, API key management, and server-side requests to OpenAI-compatible Chat Completions endpoints. Endpoint validation, SSRF mitigation, and API response validation are also implemented. The frontend chat interface and the complete message-to-response workflow are still under development.
+**Current status:** The plugin includes a modular administration settings interface, persistent configuration, secure API key management, server-side API request handling, endpoint validation, SSRF mitigation, and a public chat REST endpoint. The initial frontend chat widget is also implemented, including its launcher, responsive chat window, welcome message, and local message interactions. Connecting frontend messages to the AI API is still under development.
 
 ## Features and Roadmap
 
@@ -36,7 +36,7 @@ The project aims to provide a customizable chatbot with configurable appearance,
 - [x] API key storage, replacement, and removal.
 - [x] Preserve the saved API key when the input is left blank.
 - [x] Clear the saved API key when settings are reset.
-- [x] Display API key configuration status without revealing the saved value.
+- [x] Display API key configuration status without revealing its value.
 
 ### AI Integration
 
@@ -50,18 +50,26 @@ The project aims to provide a customizable chatbot with configurable appearance,
 - [x] Validate HTTP status codes and API response structure.
 - [x] Apply request timeouts, disable redirects, and limit response size.
 - [x] Handle unsuccessful requests and malformed responses safely.
+- [x] Public REST API endpoint for chat messages.
+- [x] Basic request validation and IP-based rate limiting.
+- [ ] Connect the frontend messaging workflow to the REST API.
 - [ ] API connectivity testing from the administration interface.
-- [ ] Connect the frontend messaging workflow to the API handler.
 
-### Frontend Chatbot
+### Frontend Chat Widget
 
-- [ ] Floating chat launcher and responsive chat window.
-- [ ] Welcome and fallback messages.
-- [ ] Apply configured appearance and behavior.
+- [x] Floating chat launcher.
+- [x] Open and close chat window.
+- [x] Welcome message.
+- [x] Separate visitor and assistant message styles.
+- [x] Local visitor message rendering.
+- [x] Responsive chat window layout.
+- [x] Keyboard interactions (Enter, Shift + Enter, and Escape).
+- [x] Basic accessibility attributes.
 - [ ] Send user messages to the server.
 - [ ] Display AI-generated responses.
 - [ ] Loading indicators and error states.
-- [ ] Conversation input and message validation.
+- [ ] Apply configured appearance and behavior settings.
+- [ ] Server-side message validation and response handling.
 
 ### Knowledge and Conversations
 
@@ -73,12 +81,13 @@ The project aims to provide a customizable chatbot with configurable appearance,
 ## Technology Stack
 
 - **PHP:** Plugin logic and server-side API integration.
-- **JavaScript:** Administration interactions and planned chatbot behavior.
-- **CSS:** Administration styling and planned chat widget styling.
+- **JavaScript:** Frontend chat interactions and administration behavior.
+- **CSS:** Frontend widget and administration styling.
 - **WordPress Options API:** Persistent settings and API key storage.
-- **WordPress Hooks API:** Plugin initialization and administration integration.
+- **WordPress Hooks API:** Plugin initialization and WordPress integration.
+- **WordPress REST API:** Chat message endpoint.
 - **WordPress HTTP API:** Server-side communication with OpenAI-compatible endpoints.
-- **Git and GitHub:** Version control, issue tracking, and collaborative development.
+- **Git and GitHub:** Version control, issue tracking, and project management.
 
 ## Project Structure
 
@@ -86,32 +95,56 @@ The project aims to provide a customizable chatbot with configurable appearance,
 htr-ai-chatbot-wp/
 ├── assets/
 │   ├── css/
+│   │   ├── chat-style.css
+│   │   ├── chat-widget.css
+│   │   └── settings.css
 │   └── js/
+│       ├── chat-script.js
+│       ├── chat-widget.js
+│       └── settings.js
 ├── components/
 │   ├── api-settings.php
-│   ├── chatbot-settings.php
 │   ├── appearance-settings.php
 │   ├── behavior-settings.php
-│   └── settings-actions.php
+│   ├── chatbot-settings.php
+│   ├── settings-actions.php
+│   ├── settings-header.php
+│   └── settings-tabs.php
 ├── includes/
 │   ├── modules/
 │   │   └── settings/
 │   │       ├── class-settings-assets.php
 │   │       ├── class-settings-menu.php
 │   │       ├── class-settings-page.php
-│   │       ├── class-settings-saver.php
-│   │       └── class-settings-reset.php
+│   │       ├── class-settings-reset.php
+│   │       └── class-settings-saver.php
 │   ├── class-api-handler.php
+│   ├── class-chat-rest-controller.php
 │   ├── class-chat-widget.php
 │   └── class-settings.php
 ├── languages/
-├── htr-ai-chatbot.php
-├── README.md
+│   └── htr-ai-chatbot.pot
+├── .gitattributes
+├── .gitignore
 ├── LICENSE
-└── .gitignore
+├── README.md
+└── htr-ai-chatbot.php
 ```
 
-The project separates settings management, administration assets, presentation components, and core plugin functionality. This structure supports maintainability and allows future features to be developed in focused modules.
+### Main Directories and Files
+
+- **assets/css/** — Stylesheets for the administration interface and frontend chat widget.
+- **assets/js/** — JavaScript files for administration interactions and frontend chat behavior.
+- **components/** — Reusable PHP presentation components for the administration settings page.
+- **includes/modules/settings/** — Modular classes responsible for settings assets, menu registration, page rendering, saving, and resetting.
+- **includes/class-api-handler.php** — Handles server-side communication with compatible AI API endpoints.
+- **includes/class-chat-rest-controller.php** — Registers and handles the public chat REST API endpoint.
+- **includes/class-chat-widget.php** — Enqueues frontend assets and renders the chat widget.
+- **includes/class-settings.php** — Initializes the administration settings functionality.
+- **languages/** — Translation template files.
+- **htr-ai-chatbot.php** — Main plugin file, constants, class loading, and initialization.
+
+**Frontend asset note:** `chat-widget.css` and `chat-widget.js` are the active frontend widget assets currently enqueued by the chat widget class. `chat-style.css` and `chat-script.js` are currently placeholder files.
 
 ## Requirements
 
@@ -134,7 +167,7 @@ The plugin is under active development and is not yet ready for production use.
 6. Enter an API key and configure a compatible endpoint if you intend to test server-side API requests.
 7. Save your settings.
 
-The administration interface currently supports saving and resetting configuration. The server-side API handler is implemented, but the complete frontend chatbot and end-to-end user messaging workflow are not yet available.
+The administration interface, server-side API handler, REST endpoint, and initial frontend chat interface are implemented. However, the complete frontend-to-AI messaging workflow is not yet available.
 
 ## Settings and API Key Management
 
@@ -171,7 +204,48 @@ The endpoint validation is designed to reduce SSRF risks by rejecting unsafe URL
 
 These measures are defense-in-depth safeguards, not a guarantee against every possible SSRF scenario. DNS behavior, hosting configuration, and network-level access controls can affect the overall security of outbound requests.
 
-The API handler is a server-side component. Its implementation alone does not mean that the frontend chatbot is ready or that visitors can already exchange messages with an AI provider through the website.
+## Chat REST API
+
+The plugin provides a public REST endpoint for receiving visitor messages.
+
+**Endpoint:**
+
+```text
+POST /wp-json/htr-ai-chatbot/v1/chat
+```
+
+The endpoint currently includes:
+
+- Request method validation.
+- Message input validation and sanitization.
+- Configurable message length validation.
+- IP-based rate limiting.
+- Server-side API handler integration.
+- Generic error responses that avoid exposing internal API details.
+
+The endpoint is designed for public website visitors, so authentication is not required for ordinary chat requests. Request validation and rate limiting provide basic protection against misuse.
+
+The frontend widget is not yet connected to this endpoint. That integration is planned as a separate development task.
+
+## Frontend Chat Widget
+
+The initial frontend chat interface is implemented using native JavaScript and CSS without third-party frontend dependencies.
+
+Current functionality includes:
+
+- A floating chat launcher.
+- An expandable chat window.
+- A welcome message.
+- Separate visual styles for visitor and assistant messages.
+- Local rendering of visitor messages.
+- Message submission using Enter.
+- Support for line breaks using Shift + Enter.
+- Closing the chat window using Escape.
+- Responsive layout for smaller screens.
+
+At this stage, messages are handled locally in the browser. The widget does not yet send messages to the REST endpoint or display actual AI-generated responses.
+
+Loading indicators, server-side error handling, and integration with the administration appearance settings are planned for future development.
 
 ## Security Considerations
 
@@ -188,6 +262,7 @@ Current security measures include:
 - API endpoint validation and SSRF mitigation.
 - Request timeout, disabled redirects, and response-size restrictions.
 - Validation of API response status and structure.
+- Basic rate limiting for public chat requests.
 
 **Important:** The API key is not encrypted in the database. Separating it from general settings and disabling autoloading do not constitute encryption or a complete security audit.
 
@@ -197,16 +272,19 @@ Do not use this development version to handle production customer conversations 
 
 ## Development Status
 
-Development is ongoing. The current focus is on completing the server-side integration and building the frontend messaging workflow.
+Development is ongoing. The current implementation includes the plugin foundation, administration settings, server-side API handling, a public chat endpoint, and the initial frontend chat interface.
 
-Planned areas of development include:
+The current development focus is completing the connection between the frontend widget and the server-side messaging workflow.
 
-1. Connecting frontend messages to the server-side API handler.
-2. Building the interactive chat interface.
-3. Adding API connectivity testing in the administration area.
-4. Improving conversation handling and user-facing error messages.
-5. Developing website content integration and knowledge management.
-6. Expanding automated and manual testing before production release.
+Planned development areas include:
+
+1. Connecting frontend messages to the REST API.
+2. Displaying AI-generated responses in the chat window.
+3. Adding loading indicators and user-facing error messages.
+4. Applying saved appearance and behavior settings to the frontend widget.
+5. Adding API connectivity testing in the administration area.
+6. Developing website content integration and knowledge management.
+7. Expanding automated and manual testing before production release.
 
 Features marked as incomplete in the roadmap should not be considered available.
 
