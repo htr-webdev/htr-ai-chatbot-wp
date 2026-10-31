@@ -171,6 +171,10 @@ class HTR_AI_Chatbot_Chat_REST_Controller {
         $api_handler = new HTR_AI_Chatbot_API_Handler();
         $reply       = $api_handler->send_message( $message );
 
+        if ( is_wp_error( $reply ) ) {
+            return $this->handle_api_error( $reply );
+        }
+
         if ( ! is_string( $reply ) || '' === trim( $reply ) ) {
             return $this->service_unavailable();
         }
@@ -182,6 +186,52 @@ class HTR_AI_Chatbot_Chat_REST_Controller {
             ),
             200
         );
+    }
+
+    /**
+     * Handle an API error without exposing sensitive information.
+     *
+     * Administrators receive the sanitized error message.
+     * Public visitors receive a generic error message.
+     *
+     * @param WP_Error $error API error.
+     * @return WP_Error
+     */
+    private function handle_api_error( $error ) {
+        if ( current_user_can( 'manage_options' ) ) {
+            $error_message = $error->get_error_message();
+            $error_code    = $error->get_error_code();
+            $error_data    = $error->get_error_data();
+
+            $status = 502;
+
+            if (
+                is_array( $error_data ) &&
+                isset( $error_data['status'] ) &&
+                is_numeric( $error_data['status'] )
+            ) {
+                $status = absint( $error_data['status'] );
+            }
+
+            if ( $status < 400 || $status > 599 ) {
+                $status = 502;
+            }
+
+            return new WP_Error(
+                'htr_chat_api_error',
+                sprintf(
+                    /* translators: %1$s: API error code, %2$s: API error message. */
+                    __( 'API Error (%1$s): %2$s', 'htr-ai-chatbot' ),
+                    sanitize_text_field( $error_code ),
+                    sanitize_text_field( $error_message )
+                ),
+                array(
+                    'status' => $status,
+                )
+            );
+        }
+
+        return $this->service_unavailable();
     }
 
     /**

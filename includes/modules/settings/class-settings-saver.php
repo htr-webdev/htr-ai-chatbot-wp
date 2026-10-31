@@ -44,28 +44,29 @@ class HTR_AI_Chatbot_Settings_Saver {
         }
 
         $defaults = array(
-            'api_provider'      => 'openai',
-            'api_model'          => 'gpt-4o-mini',
+            'api_provider'      => 'avalai',
+            'api_model'         => 'gpt-4o-mini',
+            'custom_model'      => '',
             'api_endpoint'      => '',
-            'chatbot_name'       => '',
-            'welcome_message'    => '',
-            'input_placeholder'  => '',
-            'fallback_message'   => '',
-            'primary_color'      => '#2563EB',
-            'chatbot_position'   => 'bottom-right',
-            'chatbot_width'      => 380,
-            'chatbot_height'     => 550,
-            'header_style'       => 'solid',
-            'chatbot_enabled'    => 1,
-            'auto_open'          => 0,
-            'auto_open_delay'    => 5,
-            'show_close_button'  => 1,
-            'message_limit'      => 2000,
+            'chatbot_name'      => '',
+            'welcome_message'   => '',
+            'input_placeholder' => '',
+            'fallback_message'  => '',
+            'primary_color'     => '#2563EB',
+            'chatbot_position'  => 'bottom-right',
+            'chatbot_width'     => 380,
+            'chatbot_height'    => 550,
+            'header_style'      => 'solid',
+            'chatbot_enabled'   => 1,
+            'auto_open'         => 0,
+            'auto_open_delay'   => 5,
+            'show_close_button' => 1,
+            'message_limit'     => 2000,
         );
 
         $settings = wp_parse_args( $stored_settings, $defaults );
 
-        // API settings.
+        // API provider settings.
         if (
             isset( $input['htr_api_provider'] ) &&
             is_string( $input['htr_api_provider'] )
@@ -74,11 +75,18 @@ class HTR_AI_Chatbot_Settings_Saver {
                 $input['htr_api_provider']
             );
 
-            if ( in_array( $provider, array( 'openai' ), true ) ) {
+            $allowed_providers = array(
+                'openai',
+                'avalai',
+                'custom',
+            );
+
+            if ( in_array( $provider, $allowed_providers, true ) ) {
                 $settings['api_provider'] = $provider;
             }
         }
 
+        // AI model settings.
         if (
             isset( $input['htr_api_model'] ) &&
             is_string( $input['htr_api_model'] )
@@ -87,21 +95,39 @@ class HTR_AI_Chatbot_Settings_Saver {
                 $input['htr_api_model']
             );
 
-            if ( in_array( $model, array( 'gpt-4o-mini' ), true ) ) {
-                $settings['api_model'] = $model;
+            if ( 'gpt-4o-mini' === $model ) {
+                $settings['api_model'] = 'gpt-4o-mini';
+            } elseif ( 'custom' === $model ) {
+                if (
+                    isset( $input['htr_custom_model'] ) &&
+                    is_string( $input['htr_custom_model'] )
+                ) {
+                    $custom_model = trim(
+                        sanitize_text_field(
+                            $input['htr_custom_model']
+                        )
+                    );
+
+                    if (
+                        '' !== $custom_model &&
+                        strlen( $custom_model ) <= 200
+                    ) {
+                        $settings['custom_model'] = $custom_model;
+                        $settings['api_model'] = 'custom';
+                    }
+                }
             }
         }
 
+        // API endpoint settings.
         if (
             isset( $input['htr_api_endpoint'] ) &&
             is_string( $input['htr_api_endpoint'] )
         ) {
             $settings['api_endpoint'] = esc_url_raw(
-                $input['htr_api_endpoint']
+                trim( $input['htr_api_endpoint'] )
             );
         }
-
-
 
         // API key management.
         $api_key = get_option( 'htr_ai_chatbot_api_key', '' );
@@ -145,8 +171,6 @@ class HTR_AI_Chatbot_Settings_Saver {
         // Remove the API key from the general settings option.
         unset( $settings['api_key'] );
 
-
-
         // Chatbot settings.
         $text_fields = array(
             'htr_chatbot_name'      => 'chatbot_name',
@@ -165,7 +189,7 @@ class HTR_AI_Chatbot_Settings_Saver {
         }
 
         $textarea_fields = array(
-            'htr_welcome_message' => 'welcome_message',
+            'htr_welcome_message'  => 'welcome_message',
             'htr_fallback_message' => 'fallback_message',
         );
 
@@ -213,14 +237,20 @@ class HTR_AI_Chatbot_Settings_Saver {
             }
         }
 
-        if ( isset( $input['htr_chatbot_width'] ) && is_scalar( $input['htr_chatbot_width'] ) ) {
+        if (
+            isset( $input['htr_chatbot_width'] ) &&
+            is_scalar( $input['htr_chatbot_width'] )
+        ) {
             $settings['chatbot_width'] = min(
                 600,
                 max( 280, absint( $input['htr_chatbot_width'] ) )
             );
         }
 
-        if ( isset( $input['htr_chatbot_height'] ) && is_scalar( $input['htr_chatbot_height'] ) ) {
+        if (
+            isset( $input['htr_chatbot_height'] ) &&
+            is_scalar( $input['htr_chatbot_height'] )
+        ) {
             $settings['chatbot_height'] = min(
                 800,
                 max( 350, absint( $input['htr_chatbot_height'] ) )
@@ -266,14 +296,20 @@ class HTR_AI_Chatbot_Settings_Saver {
             }
         }
 
-        if ( isset( $input['htr_auto_open_delay'] ) && is_scalar( $input['htr_auto_open_delay'] ) ) {
+        if (
+            isset( $input['htr_auto_open_delay'] ) &&
+            is_scalar( $input['htr_auto_open_delay'] )
+        ) {
             $settings['auto_open_delay'] = min(
                 60,
                 max( 1, absint( $input['htr_auto_open_delay'] ) )
             );
         }
 
-        if ( isset( $input['htr_message_limit'] ) && is_scalar( $input['htr_message_limit'] ) ) {
+        if (
+            isset( $input['htr_message_limit'] ) &&
+            is_scalar( $input['htr_message_limit'] )
+        ) {
             $settings['message_limit'] = min(
                 10000,
                 max( 100, absint( $input['htr_message_limit'] ) )

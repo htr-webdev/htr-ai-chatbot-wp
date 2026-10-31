@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // Settings tabs.
   const tabs = document.querySelectorAll(".htr-settings-tab");
   const panels = document.querySelectorAll(".htr-settings-panel");
 
@@ -49,6 +50,20 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  // Custom model field visibility.
+  const modelSelect = document.getElementById("htr-api-model");
+  const customModelField = document.getElementById("htr-custom-model-field");
+
+  if (modelSelect && customModelField) {
+    function toggleCustomModelField() {
+      customModelField.hidden = modelSelect.value !== "custom";
+    }
+
+    modelSelect.addEventListener("change", toggleCustomModelField);
+    toggleCustomModelField();
+  }
+
+  // Settings reset confirmation.
   const resetButton = document.getElementById("htr-reset-settings");
   const settingsForm = document.getElementById("htr-settings-form");
 

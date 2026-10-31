@@ -79,6 +79,87 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /**
+   * Extract a readable error message from a REST API response.
+   *
+   * @param {Object} data Response data.
+   * @param {number} status HTTP status code.
+   * @returns {string} Error message.
+   */
+  function getErrorMessage(data, status) {
+    if (data && typeof data.message === "string" && data.message.trim()) {
+      return data.message.trim();
+    }
+
+    if (
+      data &&
+      data.data &&
+      typeof data.data.message === "string" &&
+      data.data.message.trim()
+    ) {
+      return data.data.message.trim();
+    }
+
+    if (status === 429) {
+      return "Too many messages. Please wait a moment and try again.";
+    }
+
+    if (status >= 500) {
+      return "The server encountered an error. Please try again later.";
+    }
+
+    return "Unable to process your message. Please try again.";
+  }
+
+  /**
+   * Send a message to the REST API.
+   *
+   * @param {string} message Message content.
+   * @returns {Promise<Object>} API response data.
+   */
+  async function sendMessage(message) {
+    let response;
+
+    try {
+      response = await fetch(window.htrChatWidget.restUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: message,
+        }),
+      });
+    } catch (error) {
+      throw new Error(
+        "Unable to connect to the server. Please check your connection and try again.",
+      );
+    }
+
+    let data;
+
+    try {
+      data = await response.json();
+    } catch (error) {
+      throw new Error("The server returned an invalid response.");
+    }
+
+    if (!response.ok) {
+      throw new Error(getErrorMessage(data, response.status));
+    }
+
+    if (
+      !data ||
+      data.success !== true ||
+      typeof data.message !== "string" ||
+      !data.message.trim()
+    ) {
+      throw new Error(getErrorMessage(data, response.status));
+    }
+
+    return data;
+  }
+
+  /**
    * Handle message submission.
    *
    * @param {Event} event Form submission event.
@@ -107,31 +188,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const loadingMessage = addMessage("Thinking...", "assistant");
 
     try {
-      const response = await fetch(window.htrChatWidget.restUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: message,
-        }),
-      });
-
-      let data;
-
-      try {
-        data = await response.json();
-      } catch (error) {
-        throw new Error("The server returned an invalid response.");
-      }
-
-      if (!response.ok || !data.success || typeof data.message !== "string") {
-        throw new Error(
-          typeof data.message === "string"
-            ? data.message
-            : "Unable to process your message. Please try again.",
-        );
-      }
+      const data = await sendMessage(message);
 
       loadingMessage.remove();
 
