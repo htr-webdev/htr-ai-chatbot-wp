@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // Settings tabs.
   const tabs = document.querySelectorAll(".htr-settings-tab");
   const panels = document.querySelectorAll(".htr-settings-panel");
 
@@ -7,73 +6,57 @@ document.addEventListener("DOMContentLoaded", function () {
     const target = tab.dataset.tab;
 
     tabs.forEach(function (item) {
-      const isActive = item === tab;
+      const active = item === tab;
 
-      item.classList.toggle("is-active", isActive);
-      item.setAttribute("aria-selected", String(isActive));
-      item.tabIndex = isActive ? 0 : -1;
+      item.classList.toggle("is-active", active);
+      item.setAttribute("aria-selected", String(active));
+      item.tabIndex = active ? 0 : -1;
     });
 
     panels.forEach(function (panel) {
-      const isActive = panel.dataset.panel === target;
+      const active = panel.dataset.panel === target;
 
-      panel.hidden = !isActive;
-      panel.classList.toggle("is-active", isActive);
+      panel.hidden = !active;
+      panel.classList.toggle("is-active", active);
     });
   }
 
-  if (tabs.length && panels.length) {
-    tabs.forEach(function (tab, index) {
-      tab.addEventListener("click", function () {
-        activateTab(tab);
-      });
-
-      tab.addEventListener("keydown", function (event) {
-        let nextIndex = index;
-
-        if (event.key === "ArrowRight") {
-          nextIndex = (index + 1) % tabs.length;
-        } else if (event.key === "ArrowLeft") {
-          nextIndex = (index - 1 + tabs.length) % tabs.length;
-        } else if (event.key === "Home") {
-          nextIndex = 0;
-        } else if (event.key === "End") {
-          nextIndex = tabs.length - 1;
-        } else {
-          return;
-        }
-
-        event.preventDefault();
-        tabs[nextIndex].focus();
-        activateTab(tabs[nextIndex]);
-      });
+  tabs.forEach(function (tab, index) {
+    tab.addEventListener("click", function () {
+      activateTab(tab);
     });
-  }
 
-  // Custom model field visibility.
-  const modelSelect = document.getElementById("htr-api-model");
-  const customModelField = document.getElementById("htr-custom-model-field");
+    tab.addEventListener("keydown", function (event) {
+      let nextIndex = index;
 
-  if (modelSelect && customModelField) {
-    function toggleCustomModelField() {
-      customModelField.hidden = modelSelect.value !== "custom";
-    }
+      if (event.key === "ArrowRight") {
+        nextIndex = (index + 1) % tabs.length;
+      } else if (event.key === "ArrowLeft") {
+        nextIndex = (index - 1 + tabs.length) % tabs.length;
+      } else if (event.key === "Home") {
+        nextIndex = 0;
+      } else if (event.key === "End") {
+        nextIndex = tabs.length - 1;
+      } else {
+        return;
+      }
 
-    modelSelect.addEventListener("change", toggleCustomModelField);
-    toggleCustomModelField();
-  }
+      event.preventDefault();
+      tabs[nextIndex].focus();
+      activateTab(tabs[nextIndex]);
+    });
+  });
 
-  // Settings reset confirmation.
   const resetButton = document.getElementById("htr-reset-settings");
   const settingsForm = document.getElementById("htr-settings-form");
 
   if (resetButton && settingsForm) {
     resetButton.addEventListener("click", function () {
-      const confirmed = window.confirm(
-        "Are you sure you want to reset all chatbot settings? This will also clear the saved API key.",
-      );
-
-      if (!confirmed) {
+      if (
+        !window.confirm(
+          "Are you sure you want to reset all chatbot settings? This will also clear the saved API key.",
+        )
+      ) {
         return;
       }
 
@@ -82,9 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
       );
 
       if (!nonce) {
-        window.alert(
-          "Unable to reset settings. Please reload the page and try again.",
-        );
+        window.alert("Unable to reset settings. Please reload the page.");
         return;
       }
 
@@ -92,20 +73,79 @@ document.addEventListener("DOMContentLoaded", function () {
       resetForm.method = "POST";
       resetForm.action = settingsForm.getAttribute("action");
 
-      const actionInput = document.createElement("input");
-      actionInput.type = "hidden";
-      actionInput.name = "action";
-      actionInput.value = "htr_reset_settings";
+      const fields = {
+        action: "htr_reset_settings",
+        htr_reset_settings_nonce: nonce.value,
+      };
 
-      const nonceInput = document.createElement("input");
-      nonceInput.type = "hidden";
-      nonceInput.name = "htr_reset_settings_nonce";
-      nonceInput.value = nonce.value;
+      Object.keys(fields).forEach(function (key) {
+        const field = document.createElement("input");
+        field.type = "hidden";
+        field.name = key;
+        field.value = fields[key];
+        resetForm.appendChild(field);
+      });
 
-      resetForm.appendChild(actionInput);
-      resetForm.appendChild(nonceInput);
       document.body.appendChild(resetForm);
       resetForm.submit();
+    });
+  }
+
+  const testButton = document.getElementById("htr-test-api");
+  const testStatus = document.getElementById("htr-test-status");
+  const testLog = document.getElementById("htr-test-log");
+
+  if (testButton && testStatus && testLog && window.htrAdminSettings) {
+    testButton.addEventListener("click", async function () {
+      if (testButton.disabled) {
+        return;
+      }
+
+      testButton.disabled = true;
+      testStatus.textContent = "Testing connection...";
+      testLog.textContent = "Sending test request...";
+
+      const body = new URLSearchParams({
+        action: "htr_test_api_connection",
+        nonce: window.htrAdminSettings.nonce,
+      });
+
+      try {
+        const response = await fetch(window.htrAdminSettings.ajaxUrl, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          },
+          body: body.toString(),
+        });
+
+        const data = await response.json();
+
+        if (data && data.data && data.data.log) {
+          testLog.textContent = JSON.stringify(data.data.log, null, 2);
+        } else {
+          testLog.textContent = JSON.stringify(data, null, 2);
+        }
+
+        testStatus.textContent =
+          data && data.success
+            ? "Connection successful."
+            : "Connection failed.";
+      } catch (error) {
+        testStatus.textContent = "Test request failed.";
+
+        testLog.textContent = JSON.stringify(
+          {
+            result: "Failed",
+            error: error.message || "Unknown network error.",
+          },
+          null,
+          2,
+        );
+      } finally {
+        testButton.disabled = false;
+      }
     });
   }
 });

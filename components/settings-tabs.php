@@ -11,54 +11,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 
 <nav class="htr-settings-tabs" aria-label="Settings sections" role="tablist">
-    <button
-        type="button"
-        class="htr-settings-tab is-active"
-        id="htr-tab-api"
-        role="tab"
-        aria-selected="true"
-        aria-controls="htr-panel-api"
-        data-tab="api"
-    >
-        API Settings
-    </button>
+    <?php
+    $tabs = array(
+        'api'        => 'API Settings',
+        'chatbot'    => 'Chatbot',
+        'appearance' => 'Appearance',
+        'behavior'   => 'Behavior',
+        'test'       => 'Test',
+    );
 
-    <button
-        type="button"
-        class="htr-settings-tab"
-        id="htr-tab-chatbot"
-        role="tab"
-        aria-selected="false"
-        aria-controls="htr-panel-chatbot"
-        data-tab="chatbot"
-        tabindex="-1"
-    >
-        Chatbot
-    </button>
-
-    <button
-        type="button"
-        class="htr-settings-tab"
-        id="htr-tab-appearance"
-        role="tab"
-        aria-selected="false"
-        aria-controls="htr-panel-appearance"
-        data-tab="appearance"
-        tabindex="-1"
-    >
-        Appearance
-    </button>
-
-    <button
-        type="button"
-        class="htr-settings-tab"
-        id="htr-tab-behavior"
-        role="tab"
-        aria-selected="false"
-        aria-controls="htr-panel-behavior"
-        data-tab="behavior"
-        tabindex="-1"
-    >
-        Behavior
-    </button>
+    foreach ( $tabs as $key => $label ) :
+        $active = 'api' === $key;
+        ?>
+        <button
+            type="button"
+            class="htr-settings-tab<?php echo $active ? ' is-active' : ''; ?>"
+            id="htr-tab-<?php echo esc_attr( $key ); ?>"
+            role="tab"
+            aria-selected="<?php echo $active ? 'true' : 'false'; ?>"
+            aria-controls="htr-panel-<?php echo esc_attr( $key ); ?>"
+            data-tab="<?php echo esc_attr( $key ); ?>"
+            tabindex="<?php echo $active ? '0' : '-1'; ?>"
+        >
+            <?php echo esc_html( $label ); ?>
+        </button>
+    <?php endforeach; ?>
 </nav>

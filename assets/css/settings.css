@@ -406,3 +406,35 @@
     animation: none;
   }
 }
+/* API connection test */
+
+.htr-test-log {
+  width: 100%;
+  max-width: 900px;
+  min-height: 180px;
+  max-height: 520px;
+  overflow: auto;
+  padding: 18px;
+  margin: 12px 0 0;
+  color: #e2e8f0;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+#htr-test-status {
+  display: inline-block;
+  margin-left: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#htr-test-api:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
