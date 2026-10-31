@@ -68,36 +68,34 @@ class HTR_AI_Chatbot_API_Tester {
         $started_at = microtime( true );
 
         $capture = array(
-            'http_status'  => null,
+            'http_status'    => null,
             'response_model' => null,
-            'response_id'  => null,
-            'response_body' => null,
+            'response_id'    => null,
+            'transport_error' => null,
         );
 
         $capture_response = function ( $response, $args, $url ) use ( &$capture ) {
             if ( is_wp_error( $response ) ) {
-                $capture['transport_error'] = $response->get_error_message();
+                $capture['transport_error'] = sanitize_text_field(
+                    $response->get_error_message()
+                );
+
                 return $response;
             }
 
             $capture['http_status'] = wp_remote_retrieve_response_code( $response );
 
             $body = wp_remote_retrieve_body( $response );
+            $decoded = json_decode( $body, true );
 
-            if ( is_string( $body ) && '' !== $body ) {
-                $decoded = json_decode( $body, true );
+            if ( is_array( $decoded ) ) {
+                $capture['response_model'] = isset( $decoded['model'] )
+                    ? sanitize_text_field( $decoded['model'] )
+                    : null;
 
-                if ( is_array( $decoded ) ) {
-                    $capture['response_model'] = isset( $decoded['model'] )
-                        ? sanitize_text_field( $decoded['model'] )
-                        : null;
-
-                    $capture['response_id'] = isset( $decoded['id'] )
-                        ? sanitize_text_field( $decoded['id'] )
-                        : null;
-
-                    $capture['response_body'] = $decoded;
-                }
+                $capture['response_id'] = isset( $decoded['id'] )
+                    ? sanitize_text_field( $decoded['id'] )
+                    : null;
             }
 
             return $response;
@@ -113,7 +111,9 @@ class HTR_AI_Chatbot_API_Tester {
 
         remove_filter( 'http_response', $capture_response, 10 );
 
-        $duration = round( ( microtime( true ) - $started_at ) * 1000 );
+        $duration = round(
+            ( microtime( true ) - $started_at ) * 1000
+        );
 
         $log = array(
             'timestamp'       => current_time( 'mysql' ),
@@ -131,17 +131,19 @@ class HTR_AI_Chatbot_API_Tester {
             $error_data = $result->get_error_data();
 
             $log['error_code'] = $result->get_error_code();
-            $log['error_message'] = $result->get_error_message();
+            $log['error_message'] = sanitize_textarea_field(
+                $result->get_error_message()
+            );
+
             $log['error_stage'] = (
-                is_array( $error_data ) && isset( $error_data['stage'] )
+                is_array( $error_data ) &&
+                isset( $error_data['stage'] )
             )
                 ? sanitize_text_field( $error_data['stage'] )
                 : 'unknown';
 
             if ( isset( $capture['transport_error'] ) ) {
-                $log['transport_error'] = sanitize_text_field(
-                    $capture['transport_error']
-                );
+                $log['transport_error'] = $capture['transport_error'];
             }
 
             wp_send_json_error(

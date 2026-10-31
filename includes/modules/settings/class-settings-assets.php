@@ -42,6 +42,13 @@ class HTR_AI_Chatbot_Settings_Assets {
             HTR_AI_CHATBOT_VERSION
         );
 
+        wp_enqueue_style(
+            'htr-ai-chatbot-widget-logs',
+            HTR_AI_CHATBOT_URL . 'assets/css/widget-logs.css',
+            array( 'htr-ai-chatbot-settings' ),
+            HTR_AI_CHATBOT_VERSION
+        );
+
         wp_enqueue_script(
             'htr-ai-chatbot-settings',
             HTR_AI_CHATBOT_URL . 'assets/js/settings.js',

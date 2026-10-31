@@ -91,11 +91,54 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  /**
+   * Send an authenticated admin AJAX request.
+   *
+   * @param {string} action AJAX action.
+   * @returns {Promise<Object>} Parsed response.
+   */
+  async function sendAdminRequest(action) {
+    if (!window.htrAdminSettings) {
+      throw new Error("Admin settings are not available.");
+    }
+
+    const body = new URLSearchParams({
+      action: action,
+      nonce: window.htrAdminSettings.nonce,
+    });
+
+    const response = await fetch(window.htrAdminSettings.ajaxUrl, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      },
+      body: body.toString(),
+    });
+
+    let data;
+
+    try {
+      data = await response.json();
+    } catch (error) {
+      throw new Error("The server returned an invalid response.");
+    }
+
+    if (!response.ok || !data) {
+      throw new Error("The request could not be completed.");
+    }
+
+    return data;
+  }
+
+  /**
+   * API connection test.
+   */
   const testButton = document.getElementById("htr-test-api");
   const testStatus = document.getElementById("htr-test-status");
   const testLog = document.getElementById("htr-test-log");
 
-  if (testButton && testStatus && testLog && window.htrAdminSettings) {
+  if (testButton && testStatus && testLog) {
     testButton.addEventListener("click", async function () {
       if (testButton.disabled) {
         return;
@@ -105,22 +148,10 @@ document.addEventListener("DOMContentLoaded", function () {
       testStatus.textContent = "Testing connection...";
       testLog.textContent = "Sending test request...";
 
-      const body = new URLSearchParams({
-        action: "htr_test_api_connection",
-        nonce: window.htrAdminSettings.nonce,
-      });
-
       try {
-        const response = await fetch(window.htrAdminSettings.ajaxUrl, {
-          method: "POST",
-          credentials: "same-origin",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-          },
-          body: body.toString(),
-        });
-
-        const data = await response.json();
+        const data = await sendAdminRequest(
+          "htr_test_api_connection",
+        );
 
         if (data && data.data && data.data.log) {
           testLog.textContent = JSON.stringify(data.data.log, null, 2);
@@ -145,6 +176,68 @@ document.addEventListener("DOMContentLoaded", function () {
         );
       } finally {
         testButton.disabled = false;
+      }
+    });
+  }
+
+  /**
+   * Fetch frontend widget logs.
+   */
+  const fetchLogsButton = document.getElementById(
+    "htr-fetch-widget-logs",
+  );
+
+  const widgetLogsStatus = document.getElementById(
+    "htr-widget-logs-status",
+  );
+
+  const widgetLogsOutput = document.getElementById(
+    "htr-widget-logs-output",
+  );
+
+  if (fetchLogsButton && widgetLogsStatus && widgetLogsOutput) {
+    fetchLogsButton.addEventListener("click", async function () {
+      if (fetchLogsButton.disabled) {
+        return;
+      }
+
+      fetchLogsButton.disabled = true;
+      widgetLogsStatus.textContent = "Fetching widget logs...";
+
+      try {
+        const data = await sendAdminRequest(
+          "htr_fetch_widget_logs",
+        );
+
+        if (!data.success || !data.data || !Array.isArray(data.data.logs)) {
+          throw new Error(
+            data.data && data.data.message
+              ? data.data.message
+              : "Unable to retrieve widget logs.",
+          );
+        }
+
+        const logs = data.data.logs;
+
+        widgetLogsOutput.textContent = logs.length
+          ? JSON.stringify(logs, null, 2)
+          : "No widget logs are available.";
+
+        widgetLogsStatus.textContent =
+          logs.length + " log(s) retrieved successfully.";
+      } catch (error) {
+        widgetLogsStatus.textContent = "Unable to fetch widget logs.";
+
+        widgetLogsOutput.textContent = JSON.stringify(
+          {
+            result: "Failed",
+            error: error.message || "Unknown network error.",
+          },
+          null,
+          2,
+        );
+      } finally {
+        fetchLogsButton.disabled = false;
       }
     });
   }
