@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const closeButton = widget.querySelector(".htr-chat-widget__close");
   const form = widget.querySelector(".htr-chat-widget__form");
   const input = widget.querySelector(".htr-chat-widget__input");
+  const sendButton = widget.querySelector(".htr-chat-widget__send");
   const messages = widget.querySelector(".htr-chat-widget__messages");
 
   if (
@@ -18,10 +19,16 @@ document.addEventListener("DOMContentLoaded", function () {
     !closeButton ||
     !form ||
     !input ||
-    !messages
+    !sendButton ||
+    !messages ||
+    !window.htrChatWidget ||
+    !window.htrChatWidget.restUrl
   ) {
     return;
   }
+
+  let isSending = false;
+  let lastFailedMessage = null;
 
   /**
    * Open the chat window.
@@ -50,6 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
    *
    * @param {string} text Message content.
    * @param {string} type Message type.
+   * @returns {HTMLElement} Created message element.
    */
   function addMessage(text, type) {
     const message = document.createElement("div");
@@ -66,6 +74,8 @@ document.addEventListener("DOMContentLoaded", function () {
     messages.appendChild(message);
 
     messages.scrollTop = messages.scrollHeight;
+
+    return message;
   }
 
   /**
@@ -73,8 +83,12 @@ document.addEventListener("DOMContentLoaded", function () {
    *
    * @param {Event} event Form submission event.
    */
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+
+    if (isSending) {
+      return;
+    }
 
     const message = input.value.trim();
 
@@ -82,10 +96,64 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    addMessage(message, "visitor");
+    isSending = true;
+    sendButton.disabled = true;
+    input.disabled = true;
 
-    input.value = "";
-    input.focus();
+    if (message !== lastFailedMessage) {
+      addMessage(message, "visitor");
+    }
+
+    const loadingMessage = addMessage("Thinking...", "assistant");
+
+    try {
+      const response = await fetch(window.htrChatWidget.restUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: message,
+        }),
+      });
+
+      let data;
+
+      try {
+        data = await response.json();
+      } catch (error) {
+        throw new Error("The server returned an invalid response.");
+      }
+
+      if (!response.ok || !data.success || typeof data.message !== "string") {
+        throw new Error(
+          typeof data.message === "string"
+            ? data.message
+            : "Unable to process your message. Please try again.",
+        );
+      }
+
+      loadingMessage.remove();
+
+      addMessage(data.message, "assistant");
+
+      input.value = "";
+      lastFailedMessage = null;
+    } catch (error) {
+      loadingMessage.remove();
+
+      addMessage(
+        error.message || "Something went wrong. Please try again.",
+        "assistant",
+      );
+
+      lastFailedMessage = message;
+    } finally {
+      isSending = false;
+      sendButton.disabled = false;
+      input.disabled = false;
+      input.focus();
+    }
   }
 
   launcher.addEventListener("click", openChat);
