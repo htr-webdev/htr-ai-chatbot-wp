@@ -1,6 +1,6 @@
 <?php
 /**
- * Handles communication with the AI API.
+ * Handles communication with AI providers.
  *
  * @package HTR_AI_Chatbot
  */
@@ -15,84 +15,71 @@ if ( ! defined( 'ABSPATH' ) ) {
 class HTR_AI_Chatbot_API_Handler {
 
     /**
-     * Send a message to an OpenAI-compatible API.
+     * Provider endpoints.
      *
-     * @param string $message The user's message.
-     * @return string The generated response or an empty string on failure.
+     * @var array
+     */
+    private $provider_endpoints = array(
+        'openai' => 'https://api.openai.com/v1/chat/completions',
+        'avalai' => 'https://api.avalai.ir/v1/chat/completions',
+    );
+
+    /**
+     * Send a message.
+     *
+     * @param string $message User message.
+     * @return string|WP_Error
      */
     public function send_message( $message ) {
-        if ( ! is_string( $message ) ) {
-            return '';
-        }
-
-        $message = trim( $message );
-
-        if ( '' === $message ) {
-            return '';
+        if ( ! is_string( $message ) || '' === trim( $message ) ) {
+            return $this->create_error( 'invalid_message', 'A valid message is required.', 'validation' );
         }
 
         $settings = get_option( 'htr_ai_chatbot_settings', array() );
 
         if ( ! is_array( $settings ) ) {
-            return '';
+            return $this->create_error( 'invalid_settings', 'Plugin settings are invalid.', 'settings' );
         }
 
-        $message_limit = isset( $settings['message_limit'] )
-            ? absint( $settings['message_limit'] )
-            : 2000;
+        $provider = isset( $settings['api_provider'] )
+            ? sanitize_key( $settings['api_provider'] )
+            : '';
 
-        $message_limit = min( 10000, max( 100, $message_limit ) );
+        if ( ! in_array( $provider, array( 'openai', 'avalai', 'custom' ), true ) ) {
+            return $this->create_error( 'missing_provider', 'No valid API provider is configured.', 'configuration' );
+        }
 
-        if ( strlen( $message ) > $message_limit ) {
-            return '';
+        $model = isset( $settings['custom_model'] ) && is_string( $settings['custom_model'] )
+            ? trim( sanitize_text_field( $settings['custom_model'] ) )
+            : '';
+
+        if ( '' === $model || strlen( $model ) > 200 ) {
+            return $this->create_error( 'missing_model', 'A valid model ID is required.', 'configuration' );
         }
 
         $api_key = get_option( 'htr_ai_chatbot_api_key', '' );
 
         if ( ! is_string( $api_key ) || '' === trim( $api_key ) ) {
-            return '';
+            return $this->create_error( 'missing_api_key', 'API key is not configured.', 'configuration' );
         }
 
-        $provider = isset( $settings['api_provider'] )
-            ? $settings['api_provider']
-            : 'openai';
-
-        if ( 'openai' !== $provider ) {
-            return '';
-        }
-
-        $model = isset( $settings['api_model'] )
-            ? sanitize_text_field( $settings['api_model'] )
-            : 'gpt-4o-mini';
-
-        if ( '' === $model ) {
-            return '';
-        }
-
-        $endpoint = isset( $settings['api_endpoint'] )
-            && is_string( $settings['api_endpoint'] )
-                ? trim( $settings['api_endpoint'] )
-                : '';
+        $endpoint = isset( $settings['api_endpoint'] ) && is_string( $settings['api_endpoint'] )
+            ? trim( $settings['api_endpoint'] )
+            : '';
 
         if ( '' === $endpoint ) {
-            $endpoint = 'https://api.openai.com/v1/chat/completions';
+            if ( ! isset( $this->provider_endpoints[ $provider ] ) ) {
+                return $this->create_error( 'missing_endpoint', 'An API endpoint is required for this provider.', 'configuration' );
+            }
+
+            $endpoint = $this->provider_endpoints[ $provider ];
         }
 
         $endpoint = $this->validate_endpoint( $endpoint );
 
         if ( false === $endpoint ) {
-            return '';
+            return $this->create_error( 'invalid_endpoint', 'The API endpoint is invalid or unavailable.', 'endpoint' );
         }
-
-        $request_body = array(
-            'model'    => $model,
-            'messages' => array(
-                array(
-                    'role'    => 'user',
-                    'content' => $message,
-                ),
-            ),
-        );
 
         $response = wp_safe_remote_post(
             $endpoint,
@@ -105,51 +92,88 @@ class HTR_AI_Chatbot_API_Handler {
                     'Content-Type'  => 'application/json',
                     'Accept'        => 'application/json',
                 ),
-                'body'                => wp_json_encode( $request_body ),
+                'body' => wp_json_encode(
+                    array(
+                        'model'    => $model,
+                        'messages' => array(
+                            array(
+                                'role'    => 'user',
+                                'content' => trim( $message ),
+                            ),
+                        ),
+                    )
+                ),
             )
         );
 
         if ( is_wp_error( $response ) ) {
-            return '';
+            return $this->create_error(
+                'api_connection_error',
+                'API connection failed: ' . sanitize_text_field( $response->get_error_message() ),
+                'connection'
+            );
         }
 
-        if ( 200 !== wp_remote_retrieve_response_code( $response ) ) {
-            return '';
-        }
+        $status = wp_remote_retrieve_response_code( $response );
+        $body   = wp_remote_retrieve_body( $response );
 
-        $body = wp_remote_retrieve_body( $response );
-
-        if ( ! is_string( $body ) || '' === $body ) {
-            return '';
+        if ( $status < 200 || $status >= 300 ) {
+            return $this->create_error(
+                'api_http_error',
+                sprintf(
+                    'API returned HTTP %1$d: %2$s',
+                    $status,
+                    $this->extract_provider_error( $body )
+                ),
+                'api_request',
+                array( 'status' => $status )
+            );
         }
 
         $data = json_decode( $body, true );
 
-        if (
-            ! is_array( $data ) ||
-            ! isset( $data['choices'][0]['message']['content'] ) ||
-            ! is_string( $data['choices'][0]['message']['content'] )
-        ) {
-            return '';
+        if ( ! is_array( $data ) || JSON_ERROR_NONE !== json_last_error() ) {
+            return $this->create_error(
+                'invalid_api_json',
+                'The API returned invalid JSON.',
+                'response',
+                array( 'status' => $status )
+            );
         }
 
-        return trim( $data['choices'][0]['message']['content'] );
+        if ( isset( $data['error'] ) ) {
+            return $this->create_error(
+                'api_provider_error',
+                $this->extract_provider_error( $body ),
+                'api_response',
+                array( 'status' => $status )
+            );
+        }
+
+        $content = isset( $data['choices'][0]['message']['content'] )
+            ? $data['choices'][0]['message']['content']
+            : '';
+
+        if ( ! is_string( $content ) || '' === trim( $content ) ) {
+            return $this->create_error(
+                'empty_assistant_response',
+                'The API returned an empty assistant response.',
+                'response',
+                array( 'status' => $status )
+            );
+        }
+
+        return trim( $content );
     }
 
     /**
-     * Validate an HTTPS endpoint before making an outbound request.
+     * Validate endpoint URL.
      *
-     * WordPress performs additional destination validation when the
-     * request is sent through wp_safe_remote_post().
-     *
-     * @param string $endpoint The configured API endpoint.
-     * @return string|false Valid endpoint or false.
+     * @param string $endpoint Endpoint.
+     * @return string|false
      */
     private function validate_endpoint( $endpoint ) {
-        if (
-            '' === $endpoint ||
-            preg_match( '/[\x00-\x20\x7f\\\\]/', $endpoint )
-        ) {
+        if ( ! is_string( $endpoint ) || '' === $endpoint || preg_match( '/[\x00-\x20\x7f\\\\]/', $endpoint ) ) {
             return false;
         }
 
@@ -171,43 +195,71 @@ class HTR_AI_Chatbot_API_Handler {
         $host = strtolower( rtrim( $parts['host'], '.' ) );
 
         if (
-            '' === $host ||
             'localhost' === $host ||
             substr( $host, -10 ) === '.localhost' ||
             substr( $host, -6 ) === '.local' ||
-            substr( $host, -6 ) === '.internal'
+            substr( $host, -9 ) === '.internal' ||
+            false !== filter_var( $host, FILTER_VALIDATE_IP )
         ) {
             return false;
         }
 
-        // Require a public DNS hostname rather than an IP literal.
-        if ( false !== filter_var( $host, FILTER_VALIDATE_IP ) ) {
-            return false;
-        }
-
-        // Only HTTPS's standard port is allowed.
         if ( isset( $parts['port'] ) && 443 !== (int) $parts['port'] ) {
             return false;
         }
 
-        // Reject malformed hostnames and single-label hostnames.
         if (
             strlen( $host ) > 253 ||
             false === strpos( $host, '.' ) ||
-            ! preg_match(
-                '/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i',
-                $host
-            )
+            ! preg_match( '/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i', $host )
         ) {
             return false;
         }
 
-        $validated_url = wp_http_validate_url( $endpoint );
+        return wp_http_validate_url( $endpoint );
+    }
 
-        if ( false === $validated_url ) {
-            return false;
+    /**
+     * Extract provider error.
+     *
+     * @param string $body Response body.
+     * @return string
+     */
+    private function extract_provider_error( $body ) {
+        $data = json_decode( $body, true );
+
+        if ( isset( $data['error']['message'] ) && is_string( $data['error']['message'] ) ) {
+            return substr(
+                sanitize_text_field( wp_strip_all_tags( $data['error']['message'] ) ),
+                0,
+                500
+            );
         }
 
-        return $validated_url;
+        if ( isset( $data['error'] ) && is_string( $data['error'] ) ) {
+            return substr( sanitize_text_field( $data['error'] ), 0, 500 );
+        }
+
+        return 'The provider returned an unspecified error.';
+    }
+
+    /**
+     * Create structured error.
+     *
+     * @param string $code Error code.
+     * @param string $message Error message.
+     * @param string $stage Error stage.
+     * @param array  $data Additional data.
+     * @return WP_Error
+     */
+    private function create_error( $code, $message, $stage, $data = array() ) {
+        return new WP_Error(
+            $code,
+            $message,
+            array_merge(
+                array( 'stage' => $stage ),
+                $data
+            )
+        );
     }
 }

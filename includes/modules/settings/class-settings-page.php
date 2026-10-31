@@ -5,7 +5,6 @@
  * @package HTR_AI_Chatbot
  */
 
-// Prevent direct access.
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
@@ -25,43 +24,53 @@ class HTR_AI_Chatbot_Settings_Page {
             return;
         }
 
+        $defaults = array(
+            'api_provider'       => '',
+            'api_model'          => '',
+            'custom_model'       => '',
+            'api_endpoint'       => '',
+            'chatbot_name'       => '',
+            'welcome_message'    => '',
+            'input_placeholder'  => '',
+            'fallback_message'   => '',
+            'primary_color'      => '#2563EB',
+            'chatbot_position'   => 'bottom-right',
+            'chatbot_width'      => 380,
+            'chatbot_height'     => 550,
+            'header_style'       => 'solid',
+            'chatbot_enabled'    => 1,
+            'auto_open'          => 0,
+            'auto_open_delay'    => 5,
+            'show_close_button'  => 1,
+            'message_limit'      => 2000,
+        );
 
-$settings = wp_parse_args(
-    get_option( 'htr_ai_chatbot_settings', array() ),
-    array(
-        'api_provider'       => 'openai',
-        'api_model'          => 'gpt-4o-mini',
-        'api_endpoint'       => '',
-        'chatbot_name'       => '',
-        'welcome_message'    => '',
-        'input_placeholder'  => '',
-        'fallback_message'   => '',
-        'primary_color'      => '#2563EB',
-        'chatbot_position'   => 'bottom-right',
-        'chatbot_width'      => 380,
-        'chatbot_height'     => 550,
-        'header_style'       => 'solid',
-        'chatbot_enabled'    => 1,
-        'auto_open'          => 0,
-        'auto_open_delay'    => 5,
-        'show_close_button'  => 1,
-        'message_limit'      => 2000,
-    )
-);
+        $stored_settings = get_option( 'htr_ai_chatbot_settings', array() );
 
-        
+        $settings = wp_parse_args(
+            is_array( $stored_settings ) ? $stored_settings : array(),
+            $defaults
+        );
+
         $components_path = dirname( __DIR__, 3 ) . '/components/';
 
         echo '<div class="wrap htr-settings-page">';
 
-                if (
+        if (
             isset( $_GET['htr_reset'] ) &&
-            'success' === sanitize_text_field(
-                wp_unslash( $_GET['htr_reset'] )
-            )
+            'success' === sanitize_text_field( wp_unslash( $_GET['htr_reset'] ) )
         ) {
             echo '<div class="notice notice-success is-dismissible"><p>';
             echo esc_html( 'Settings have been reset successfully.' );
+            echo '</p></div>';
+        }
+
+        if (
+            isset( $_GET['htr_saved'] ) &&
+            '1' === sanitize_text_field( wp_unslash( $_GET['htr_saved'] ) )
+        ) {
+            echo '<div class="notice notice-success is-dismissible"><p>';
+            echo esc_html( 'Settings saved successfully.' );
             echo '</p></div>';
         }
 
@@ -78,55 +87,34 @@ $settings = wp_parse_args(
 
         echo '<div class="htr-settings-panels">';
 
-        echo '<section
-            id="htr-panel-api"
-            class="htr-settings-panel is-active"
-            role="tabpanel"
-            aria-labelledby="htr-tab-api"
-            data-panel="api"
-        >';
-        require $components_path . 'api-settings.php';
-        echo '</section>';
+        $panels = array(
+            'api'        => 'api-settings.php',
+            'chatbot'    => 'chatbot-settings.php',
+            'appearance' => 'appearance-settings.php',
+            'behavior'   => 'behavior-settings.php',
+            'test'       => 'test-settings.php',
+        );
 
-        echo '<section
-            id="htr-panel-chatbot"
-            class="htr-settings-panel"
-            role="tabpanel"
-            aria-labelledby="htr-tab-chatbot"
-            data-panel="chatbot"
-            hidden
-        >';
-        require $components_path . 'chatbot-settings.php';
-        echo '</section>';
+        foreach ( $panels as $panel => $file ) {
+            $active = 'api' === $panel;
 
-        echo '<section
-            id="htr-panel-appearance"
-            class="htr-settings-panel"
-            role="tabpanel"
-            aria-labelledby="htr-tab-appearance"
-            data-panel="appearance"
-            hidden
-        >';
-        require $components_path . 'appearance-settings.php';
-        echo '</section>';
+            printf(
+                '<section id="htr-panel-%1$s" class="htr-settings-panel%2$s" role="tabpanel" aria-labelledby="htr-tab-%1$s" data-panel="%1$s"%3$s>',
+                esc_attr( $panel ),
+                $active ? ' is-active' : '',
+                $active ? '' : ' hidden'
+            );
 
-        echo '<section
-            id="htr-panel-behavior"
-            class="htr-settings-panel"
-            role="tabpanel"
-            aria-labelledby="htr-tab-behavior"
-            data-panel="behavior"
-            hidden
-        >';
-        require $components_path . 'behavior-settings.php';
-        echo '</section>';
+            require $components_path . $file;
+
+            echo '</section>';
+        }
 
         echo '</div>';
 
         require $components_path . 'settings-actions.php';
 
         echo '</form>';
-
         echo '</div>';
     }
 }

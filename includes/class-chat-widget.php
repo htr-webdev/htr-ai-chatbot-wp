@@ -32,25 +32,33 @@ class HTR_AI_Chatbot_Chat_Widget {
      * @return void
      */
     public function enqueue_assets() {
-        if ( is_admin() ) {
-            return;
-        }
-
-        wp_enqueue_style(
-            'htr-ai-chatbot-widget',
-            HTR_AI_CHATBOT_URL . 'assets/css/chat-widget.css',
-            array(),
-            HTR_AI_CHATBOT_VERSION
-        );
-
-        wp_enqueue_script(
-            'htr-ai-chatbot-widget',
-            HTR_AI_CHATBOT_URL . 'assets/js/chat-widget.js',
-            array(),
-            HTR_AI_CHATBOT_VERSION,
-            true
-        );
+    if ( is_admin() ) {
+        return;
     }
+
+    wp_enqueue_style(
+        'htr-ai-chatbot-widget',
+        HTR_AI_CHATBOT_URL . 'assets/css/chat-widget.css',
+        array(),
+        HTR_AI_CHATBOT_VERSION
+    );
+
+    wp_enqueue_script(
+        'htr-ai-chatbot-widget',
+        HTR_AI_CHATBOT_URL . 'assets/js/chat-widget.js',
+        array(),
+        HTR_AI_CHATBOT_VERSION,
+        true
+    );
+
+    wp_localize_script(
+        'htr-ai-chatbot-widget',
+        'htrChatWidget',
+        array(
+            'restUrl' => esc_url_raw( rest_url( 'htr-ai-chatbot/v1/chat' ) ),
+        )
+    );
+}
 
     /**
      * Render the chat widget HTML.

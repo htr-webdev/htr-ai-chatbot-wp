@@ -75,12 +75,150 @@ class HTR_AI_Chatbot_Chat_REST_Controller {
     }
 
     /**
-     * Validate and process a chat message.
+     * Validate, process, and log a chat request.
      *
      * @param WP_REST_Request $request REST API request.
      * @return WP_REST_Response|WP_Error
      */
     public function handle_message( $request ) {
+        $started_at = microtime( true );
+
+        $capture = array(
+            'http_status'    => null,
+            'response_model' => null,
+            'response_id'    => null,
+            'transport_error' => null,
+        );
+
+        $capture_response = function ( $response, $args, $url ) use ( &$capture ) {
+            if ( is_wp_error( $response ) ) {
+                $capture['transport_error'] = sanitize_text_field(
+                    $response->get_error_message()
+                );
+
+                return $response;
+            }
+
+            $capture['http_status'] = wp_remote_retrieve_response_code( $response );
+
+            $body = wp_remote_retrieve_body( $response );
+            $data = json_decode( $body, true );
+
+            if ( is_array( $data ) ) {
+                $capture['response_model'] = isset( $data['model'] )
+                    ? sanitize_text_field( $data['model'] )
+                    : null;
+
+                $capture['response_id'] = isset( $data['id'] )
+                    ? sanitize_text_field( $data['id'] )
+                    : null;
+            }
+
+            return $response;
+        };
+
+        add_filter( 'http_response', $capture_response, 10, 3 );
+
+        $result = $this->process_message( $request );
+
+        remove_filter( 'http_response', $capture_response, 10 );
+
+        $duration = round(
+            ( microtime( true ) - $started_at ) * 1000
+        );
+
+        $settings = get_option( 'htr_ai_chatbot_settings', array() );
+
+        if ( ! is_array( $settings ) ) {
+            $settings = array();
+        }
+
+        $provider = isset( $settings['api_provider'] )
+            ? sanitize_key( $settings['api_provider'] )
+            : '';
+
+        $model = isset( $settings['custom_model'] )
+            ? sanitize_text_field( $settings['custom_model'] )
+            : '';
+
+        $endpoint = isset( $settings['api_endpoint'] )
+            ? esc_url_raw( $settings['api_endpoint'] )
+            : '';
+
+        if ( '' === $endpoint ) {
+            $endpoint = 'Provider default';
+        }
+
+        $params = $request->get_json_params();
+
+        $message = (
+            is_array( $params ) &&
+            isset( $params['message'] ) &&
+            is_string( $params['message'] )
+        )
+            ? sanitize_textarea_field( $params['message'] )
+            : '';
+
+        $log = array(
+            'timestamp'       => current_time( 'mysql' ),
+            'source'          => 'frontend_widget',
+            'provider'        => $provider ? $provider : 'Not configured',
+            'requested_model' => $model ? $model : 'Not configured',
+            'endpoint'        => $endpoint,
+            'http_status'     => $capture['http_status'],
+            'response_model'  => $capture['response_model'],
+            'response_id'     => $capture['response_id'],
+            'duration_ms'     => $duration,
+            'result'          => is_wp_error( $result ) ? 'Failed' : 'Success',
+            'user_message'    => substr( $message, 0, 2000 ),
+        );
+
+        if ( is_wp_error( $result ) ) {
+            $error_data = $result->get_error_data();
+
+            $log['error_code'] = $result->get_error_code();
+            $log['error_message'] = sanitize_textarea_field(
+                $result->get_error_message()
+            );
+
+            $log['error_stage'] = (
+                is_array( $error_data ) &&
+                isset( $error_data['stage'] )
+            )
+                ? sanitize_text_field( $error_data['stage'] )
+                : 'request';
+
+            if ( isset( $capture['transport_error'] ) ) {
+                $log['transport_error'] = $capture['transport_error'];
+            }
+        } else {
+            $response_data = $result->get_data();
+
+            $log['assistant_response'] = (
+                is_array( $response_data ) &&
+                isset( $response_data['message'] ) &&
+                is_string( $response_data['message'] )
+            )
+                ? substr(
+                    sanitize_textarea_field( $response_data['message'] ),
+                    0,
+                    4000
+                )
+                : '';
+        }
+
+        HTR_AI_Chatbot_Widget_Logger::add_log( $log );
+
+        return $result;
+    }
+
+    /**
+     * Process and validate a chat message.
+     *
+     * @param WP_REST_Request $request REST API request.
+     * @return WP_REST_Response|WP_Error
+     */
+    private function process_message( $request ) {
         $content_length = $request->get_header( 'content-length' );
 
         if (
@@ -132,7 +270,10 @@ class HTR_AI_Chatbot_Chat_REST_Controller {
 
         $settings = get_option( 'htr_ai_chatbot_settings', array() );
 
-        $message_limit = is_array( $settings ) && isset( $settings['message_limit'] )
+        $message_limit = (
+            is_array( $settings ) &&
+            isset( $settings['message_limit'] )
+        )
             ? absint( $settings['message_limit'] )
             : 100;
 
@@ -171,6 +312,10 @@ class HTR_AI_Chatbot_Chat_REST_Controller {
         $api_handler = new HTR_AI_Chatbot_API_Handler();
         $reply       = $api_handler->send_message( $message );
 
+        if ( is_wp_error( $reply ) ) {
+            return $this->handle_api_error( $reply );
+        }
+
         if ( ! is_string( $reply ) || '' === trim( $reply ) ) {
             return $this->service_unavailable();
         }
@@ -182,6 +327,49 @@ class HTR_AI_Chatbot_Chat_REST_Controller {
             ),
             200
         );
+    }
+
+    /**
+     * Handle an API error without exposing sensitive information.
+     *
+     * @param WP_Error $error API error.
+     * @return WP_Error
+     */
+    private function handle_api_error( $error ) {
+        if ( current_user_can( 'manage_options' ) ) {
+            $error_message = $error->get_error_message();
+            $error_code    = $error->get_error_code();
+            $error_data    = $error->get_error_data();
+
+            $status = 502;
+
+            if (
+                is_array( $error_data ) &&
+                isset( $error_data['status'] ) &&
+                is_numeric( $error_data['status'] )
+            ) {
+                $status = absint( $error_data['status'] );
+            }
+
+            if ( $status < 400 || $status > 599 ) {
+                $status = 502;
+            }
+
+            return new WP_Error(
+                'htr_chat_api_error',
+                sprintf(
+                    /* translators: %1$s: API error code, %2$s: API error message. */
+                    __( 'API Error (%1$s): %2$s', 'htr-ai-chatbot' ),
+                    sanitize_text_field( $error_code ),
+                    sanitize_text_field( $error_message )
+                ),
+                array(
+                    'status' => $status,
+                )
+            );
+        }
+
+        return $this->service_unavailable();
     }
 
     /**

@@ -27,6 +27,7 @@ class HTR_AI_Chatbot_Settings {
         );
 
         new HTR_AI_Chatbot_Settings_Assets();
+        new HTR_AI_Chatbot_API_Tester();
 
         $settings_saver = new HTR_AI_Chatbot_Settings_Saver();
 

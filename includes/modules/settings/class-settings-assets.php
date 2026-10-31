@@ -5,7 +5,6 @@
  * @package HTR_AI_Chatbot
  */
 
-// Prevent direct access.
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
@@ -26,7 +25,7 @@ class HTR_AI_Chatbot_Settings_Assets {
     }
 
     /**
-     * Load admin assets only on the plugin settings page.
+     * Enqueue settings assets.
      *
      * @param string $hook Current admin page hook.
      * @return void
@@ -36,21 +35,35 @@ class HTR_AI_Chatbot_Settings_Assets {
             return;
         }
 
-        $plugin_file = dirname( __DIR__, 3 ) . '/htr-ai-chatbot.php';
-
         wp_enqueue_style(
             'htr-ai-chatbot-settings',
-            plugin_dir_url( $plugin_file ) . 'assets/css/settings.css',
+            HTR_AI_CHATBOT_URL . 'assets/css/settings.css',
             array(),
-            '0.1.0'
+            HTR_AI_CHATBOT_VERSION
+        );
+
+        wp_enqueue_style(
+            'htr-ai-chatbot-widget-logs',
+            HTR_AI_CHATBOT_URL . 'assets/css/widget-logs.css',
+            array( 'htr-ai-chatbot-settings' ),
+            HTR_AI_CHATBOT_VERSION
         );
 
         wp_enqueue_script(
             'htr-ai-chatbot-settings',
-            plugin_dir_url( $plugin_file ) . 'assets/js/settings.js',
+            HTR_AI_CHATBOT_URL . 'assets/js/settings.js',
             array(),
-            '0.1.0',
+            HTR_AI_CHATBOT_VERSION,
             true
+        );
+
+        wp_localize_script(
+            'htr-ai-chatbot-settings',
+            'htrAdminSettings',
+            array(
+                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                'nonce'   => wp_create_nonce( 'htr_test_api_connection' ),
+            )
         );
     }
 }
